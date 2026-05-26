@@ -64,7 +64,12 @@ function figmaAssetResolver() {
     },
     build: {
       target: 'esnext',
-      outDir: 'build',
+      outDir: 'dist',
+    },
+    preview: {
+      port: 80,
+      host: '0.0.0.0',
+      strictPort: false
     },
     server: {
       port: 3000,
@@ -73,6 +78,13 @@ function figmaAssetResolver() {
       strictPort: true,
       hmr: {
         overlay: true
+      },
+      proxy: {
+        '/api': {
+          target: 'http://localhost:5001',
+          changeOrigin: true,
+          secure: false
+        }
       }
     },
   });

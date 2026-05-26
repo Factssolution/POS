@@ -1,6 +1,6 @@
 {
-  "name": "Comprehensive Business Dashboard",
-  "version": "0.1.0",
+  "name": "comprehensive-business-dashboard",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "dependencies": {
@@ -62,6 +62,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "preview": "vite preview"
   }
 }
