@@ -1,6 +1,6 @@
 const rateLimit = require('express-rate-limit');
 
-// Helper function to safely extract IP addresses
+// Helper function to safely extract IP addresses with IPv6 support
 const ipKeyGenerator = (req) => {
   const ip = req.ip || req.connection?.remoteAddress || '127.0.0.1';
   return req.user ? `user_${req.user.id}` : ip;
@@ -16,7 +16,8 @@ const generalLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator
+  keyGenerator: ipKeyGenerator,
+  skipKeyValidation: true // Skip IPv6 validation
 });
 
 // Backup READ operations rate limiter (list, config, stats - more permissive)
@@ -30,7 +31,8 @@ const backupReadLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful requests
-  keyGenerator: ipKeyGenerator
+  keyGenerator: ipKeyGenerator,
+  skipKeyValidation: true // Skip IPv6 validation
 });
 
 // Backup WRITE operations rate limiter (create, restore, delete - stricter)
@@ -44,7 +46,8 @@ const backupWriteLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false,
-  keyGenerator: ipKeyGenerator
+  keyGenerator: ipKeyGenerator,
+  skipKeyValidation: true // Skip IPv6 validation
 });
 
 // Legacy backupLimiter (alias for backward compatibility - uses write limiter)
@@ -60,7 +63,8 @@ const settingsLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator
+  keyGenerator: ipKeyGenerator,
+  skipKeyValidation: true // Skip IPv6 validation
 });
 
 module.exports = {
