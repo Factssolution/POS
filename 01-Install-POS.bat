@@ -1,28 +1,33 @@
 @echo off
 REM =====================================================
-REM POS Business Dashboard - Quick Installer
+REM POS Business Dashboard - One-Click Installer
 REM =====================================================
-REM Double-click this file to start automated installation
+REM Double-click this file to install automatically
 REM =====================================================
 
 echo ============================================
 echo   POS Business Dashboard - Installer
 echo ============================================
 echo.
-echo This will install and configure the POS system
-echo Prerequisites required:
-echo   - Node.js (LTS version)
-echo   - PostgreSQL 14+
+echo AUTOMATED INSTALLATION
+echo This will install everything automatically!
 echo.
-echo If you haven't installed these, please:
-echo   1. Download Node.js from https://nodejs.org/
-echo   2. Download PostgreSQL from https://www.postgresql.org/download/windows/
-echo   3. Re-run this installer
+echo PREREQUISITES (Install these first):
+echo   1. Node.js - https://nodejs.org/ (LTS version)
+echo   2. PostgreSQL - https://www.postgresql.org/download/windows/
 echo.
-pause
-
+echo DEFAULT DATABASE SETTINGS:
+echo   Database: pos_system
+echo   Username: postgres
+echo   Password: postgres (PostgreSQL default)
 echo.
-echo Starting installation...
+echo If you set a different PostgreSQL password,
+echo you can change it later in: src\backend\.env
+echo.
+echo ============================================
+echo.
+echo Starting installation in 3 seconds...
+timeout /t 3 /nobreak >nul
 echo.
 
 REM Run PowerShell script with execution policy bypass
@@ -30,7 +35,14 @@ powershell -ExecutionPolicy Bypass -File "%~dp0Install-POS.ps1"
 
 echo.
 echo ============================================
-echo   Installation Process Complete
+echo   Installation Complete!
 echo ============================================
+echo.
+echo NEXT STEP:
+echo Double-click "Start-POS.bat" to launch the system
+echo.
+echo Default Login:
+echo   Username: admin
+echo   Password: admin123
 echo.
 pause

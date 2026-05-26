@@ -122,60 +122,82 @@ if (Test-Path "$backendDir\node_modules") {
 }
 
 # =====================================================
-# Step 5: Configure Environment
+# Step 5: Configure Environment (AUTO-CONFIGURED)
 # =====================================================
 Write-Step "Configuring environment variables..."
 
 $envFile = "$backendDir\.env"
 
+# Default configuration (matches PostgreSQL default installation)
+$dbHost = "localhost"
+$dbPort = "5432"
+$dbName = "pos_system"
+$dbUser = "postgres"
+$dbPassword = "postgres"  # Default PostgreSQL password
+
 if (Test-Path $envFile) {
-    Write-Info ".env file already exists"
-    $overwrite = Read-Host "Do you want to reconfigure database settings? (y/n)"
-    if ($overwrite -ne 'y' -and $overwrite -ne 'Y') {
-        Write-Success "Keeping existing configuration"
-    } else {
-        Remove-Item $envFile -Force
-    }
-}
-
-if (-not (Test-Path $envFile)) {
-    Write-Info "Please enter your PostgreSQL credentials:"
-    Write-Info "(Default PostgreSQL superuser is 'postgres')"
+    Write-Info ".env file already exists, keeping existing configuration"
+    Write-Success "Using existing database configuration"
+} else {
+    Write-Info "Creating .env file with default configuration..."
+    Write-Info "Database: $dbName"
+    Write-Info "User: $dbUser"
+    Write-Info "Password: $dbPassword"
+    Write-Info "Host: $dbHost:$dbPort"
     
-    $dbUser = Read-Host "Database username"
-    $dbPassword = Read-Host "Database password" -AsSecureString
-    $dbPasswordPlain = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
-        [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($dbPassword)
-    )
-    $dbName = Read-Host "Database name" -Prompt "pos_database"
-    if (-not $dbName) { $dbName = "pos_database" }
-    $dbHost = Read-Host "Database host" -Prompt "localhost"
-    if (-not $dbHost) { $dbHost = "localhost" }
-    $dbPort = Read-Host "Database port" -Prompt "5432"
-    if (-not $dbPort) { $dbPort = "5432" }
-
-    # Create .env file
+    # Generate secure random secrets
+    $jwtSecret = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 64 | ForEach-Object {[char]$_})
+    $sessionSecret = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 64 | ForEach-Object {[char]$_})
+    
+    # Create .env file with defaults
     $envContent = @"
-# Database Configuration
-DB_HOST=$dbHost
-DB_PORT=$dbPort
-DB_NAME=$dbName
-DB_USER=$dbUser
-DB_PASSWORD=$dbPasswordPlain
+# ========================================
+# POS System - Auto-Generated Configuration
+# ========================================
+# Generated on: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+# ========================================
 
 # Server Configuration
 PORT=5001
 NODE_ENV=production
+CORS_ORIGIN=http://localhost:5173
 
-# JWT Secret (Auto-generated)
-JWT_SECRET=$( -join ((65..90) + (97..122) | Get-Random -Count 50 | ForEach-Object {[char]$_}) )
+# Database Configuration (PostgreSQL)
+DB_HOST=$dbHost
+DB_PORT=$dbPort
+DB_NAME=$dbName
+DB_USER=$dbUser
+DB_PASSWORD=$dbPassword
 
-# Session Secret
-SESSION_SECRET=$( -join ((65..90) + (97..122) | Get-Random -Count 50 | ForEach-Object {[char]$_}) )
+# JWT Configuration
+JWT_SECRET=$jwtSecret
+JWT_EXPIRE=7d
+
+# Session Configuration
+SESSION_SECRET=$sessionSecret
+
+# Timezone
+TZ=Asia/Karachi
+
+# Backup Configuration
+BACKUP_ENCRYPTION_ENABLED=false
+BACKUP_ENCRYPTION_KEY=
+
+# Email Configuration (Disabled by default)
+EMAIL_ENABLED=false
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASSWORD=
+EMAIL_FROM=
+EMAIL_TO=
 "@
 
     $envContent | Out-File -FilePath $envFile -Encoding UTF8
-    Write-Success "Environment configuration saved"
+    Write-Success "Environment configuration created with defaults"
+    Write-Info "Default DB Password: 'postgres' (PostgreSQL default)"
+    Write-Info "You can change this later in: src\backend\.env"
 }
 
 # =====================================================
@@ -190,14 +212,8 @@ $checkDbQuery = "SELECT 1 FROM pg_database WHERE datname = '$dbName';"
 $dbExists = psql -U $dbUser -h $dbHost -p $dbPort -tAc "$checkDbQuery" 2>$null
 
 if ($dbExists -eq "1") {
-    Write-Info "Database '$dbName' already exists"
-    $recreate = Read-Host "Do you want to recreate it? This will DELETE all data! (y/n)"
-    if ($recreate -eq 'y' -or $recreate -eq 'Y') {
-        Write-Info "Dropping existing database..."
-        psql -U $dbUser -h $dbHost -p $dbPort -c "DROP DATABASE IF EXISTS $dbName;" 2>$null
-        psql -U $dbUser -h $dbHost -p $dbPort -c "CREATE DATABASE $dbName;" 2>$null
-        Write-Success "Database recreated"
-    }
+    Write-Info "Database '$dbName' already exists, using existing database"
+    Write-Success "Database validated"
 } else {
     Write-Info "Creating database '$dbName'..."
     psql -U $dbUser -h $dbHost -p $dbPort -c "CREATE DATABASE $dbName;" 2>$null
@@ -205,7 +221,12 @@ if ($dbExists -eq "1") {
         Write-Success "Database created successfully"
     } else {
         Write-Error-Custom "Failed to create database!"
-        Write-Info "Check your PostgreSQL credentials and try again"
+        Write-Info "This usually means PostgreSQL password is incorrect."
+        Write-Info "Default password should be: postgres"
+        Write-Info "If you set a different password during PostgreSQL installation:"
+        Write-Info "  1. Open: src\backend\.env"
+        Write-Info "  2. Change DB_PASSWORD to your PostgreSQL password"
+        Write-Info "  3. Re-run this installer"
         pause
         exit 1
     }
