@@ -17,7 +17,7 @@ const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: ipKeyGenerator,
-  skipKeyValidation: true // Skip IPv6 validation
+  validate: { ipKeyGenerator: false } // Disable IPv6 validation for custom keyGenerator
 });
 
 // Backup READ operations rate limiter (list, config, stats - more permissive)
@@ -32,7 +32,7 @@ const backupReadLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful requests
   keyGenerator: ipKeyGenerator,
-  skipKeyValidation: true // Skip IPv6 validation
+  validate: { ipKeyGenerator: false } // Disable IPv6 validation for custom keyGenerator
 });
 
 // Backup WRITE operations rate limiter (create, restore, delete - stricter)
@@ -47,7 +47,7 @@ const backupWriteLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: false,
   keyGenerator: ipKeyGenerator,
-  skipKeyValidation: true // Skip IPv6 validation
+  validate: { ipKeyGenerator: false } // Disable IPv6 validation for custom keyGenerator
 });
 
 // Legacy backupLimiter (alias for backward compatibility - uses write limiter)
@@ -64,7 +64,7 @@ const settingsLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: ipKeyGenerator,
-  skipKeyValidation: true // Skip IPv6 validation
+  validate: { ipKeyGenerator: false } // Disable IPv6 validation for custom keyGenerator
 });
 
 module.exports = {
@@ -74,3 +74,4 @@ module.exports = {
   backupWriteLimiter,
   settingsLimiter
 };
+
