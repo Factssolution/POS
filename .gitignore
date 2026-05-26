@@ -37,3 +37,7 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+
+# Node modules (both root and backend)
+node_modules
+src/backend/node_modules
