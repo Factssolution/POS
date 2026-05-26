@@ -1,0 +1,5 @@
+admin@factssolution.com	admin123	Admin
+manager@factssolution.com	manager123	Manager
+cashier@factssolution.com	cashier123	Cashier
+skyzai2009@gmail.com	Black@786##	Cashier
+zubair@pos.com	zubair123	Admin

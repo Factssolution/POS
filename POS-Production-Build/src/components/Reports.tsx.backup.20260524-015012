@@ -1,0 +1,2802 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Button } from './ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { Badge } from './ui/badge';
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Download, FileText, TrendingUp, Users, Truck, DollarSign, FileDown, ShoppingBag, BarChart3 } from 'lucide-react';
+import { DatePicker } from './ui/date-picker';
+import { toast } from 'sonner';
+import { api } from '../services/api';
+
+const pieChartColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
+
+// Professional PDF Template Generator
+const generateProfessionalPDFHeader = (reportTitle: string, dateRange: string) => {
+  const periodLabel = dateRange === 'week' ? 'This Week' : 
+                      dateRange === 'month' ? 'This Month' : 
+                      dateRange === 'quarter' ? 'This Quarter' : 'This Year';
+  const currentDate = new Date();
+  const formattedDate = currentDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const formattedTime = currentDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>${reportTitle} - LoopKart</title>
+      <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
+        body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          padding: 0;
+          background: white;
+          color: #1a1a1a;
+          line-height: 1.6;
+        }
+        
+        /* Professional Header */
+        .pdf-header {
+          background: linear-gradient(135deg, #0d4a2e 0%, #1a6b3c 100%);
+          color: white;
+          padding: 30px 40px;
+          margin-bottom: 30px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        
+        .pdf-header-left {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+        
+        .pdf-logo {
+          width: 80px;
+          height: 80px;
+          background: white;
+          border-radius: 12px;
+          padding: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          color: #0d4a2e;
+          font-size: 24px;
+        }
+        
+        .pdf-brand h1 {
+          font-size: 32px;
+          font-weight: 700;
+          margin-bottom: 5px;
+          letter-spacing: -0.5px;
+        }
+        
+        .pdf-brand .tagline {
+          font-size: 14px;
+          opacity: 0.9;
+          margin-bottom: 3px;
+        }
+        
+        .pdf-brand .powered {
+          font-size: 12px;
+          opacity: 0.8;
+          font-style: italic;
+        }
+        
+        .pdf-header-right {
+          text-align: right;
+        }
+        
+        .pdf-header-right h2 {
+          font-size: 24px;
+          font-weight: 600;
+          margin-bottom: 8px;
+        }
+        
+        .pdf-header-right p {
+          font-size: 13px;
+          opacity: 0.9;
+          margin-bottom: 4px;
+        }
+        
+        /* Content Area */
+        .pdf-content {
+          padding: 0 40px 40px 40px;
+        }
+        
+        /* Summary Metrics Section */
+        .summary-section {
+          margin-bottom: 30px;
+        }
+        
+        .section-heading {
+          font-size: 20px;
+          font-weight: 600;
+          color: #0d4a2e;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .metrics-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 15px;
+          margin-bottom: 25px;
+        }
+        
+        .metric-card {
+          background: linear-gradient(135deg, #f8fdf9 0%, #f0f9f2 100%);
+          border: 2px solid #2e7d32;
+          border-radius: 12px;
+          padding: 20px;
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .metric-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 4px;
+          height: 100%;
+          background: #2e7d32;
+        }
+        
+        .metric-label {
+          font-size: 13px;
+          color: #666;
+          margin-bottom: 8px;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        .metric-value {
+          font-size: 28px;
+          font-weight: 700;
+          color: #0d4a2e;
+          line-height: 1.2;
+        }
+        
+        .metric-subtitle {
+          font-size: 11px;
+          color: #888;
+          margin-top: 5px;
+        }
+        
+        /* Detailed Data Table */
+        .data-section {
+          margin-top: 30px;
+        }
+        
+        .data-section-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 15px;
+        }
+        
+        .record-count {
+          font-size: 13px;
+          color: #666;
+          font-weight: 500;
+        }
+        
+        .data-table {
+          width: 100%;
+          border-collapse: separate;
+          border-spacing: 0;
+          margin-top: 15px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          border-radius: 8px;
+          overflow: hidden;
+        }
+        
+        .data-table thead {
+          background: linear-gradient(135deg, #0d4a2e 0%, #1a6b3c 100%);
+          color: white;
+        }
+        
+        .data-table th {
+          padding: 14px 16px;
+          text-align: left;
+          font-weight: 600;
+          font-size: 14px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          border: none;
+        }
+        
+        .data-table tbody tr {
+          background: white;
+          transition: background 0.2s;
+        }
+        
+        .data-table tbody tr:nth-child(even) {
+          background: #f8f9fa;
+        }
+        
+        .data-table tbody tr:hover {
+          background: #e8f5e9;
+        }
+        
+        .data-table td {
+          padding: 12px 16px;
+          font-size: 14px;
+          border-bottom: 1px solid #e0e0e0;
+          border: none;
+        }
+        
+        .data-table tbody tr:last-child td {
+          border-bottom: none;
+        }
+        
+        /* Highlight Rows */
+        .highlight-row {
+          background: #e8f5e9 !important;
+          font-weight: 600;
+        }
+        
+        .summary-row {
+          background: #f5f5f5 !important;
+          font-weight: 700;
+          border-top: 2px solid #0d4a2e;
+        }
+        
+        /* Text Utilities */
+        .text-success { color: #2e7d32; font-weight: 600; }
+        .text-danger { color: #c62828; font-weight: 600; }
+        .text-info { color: #1565c0; font-weight: 600; }
+        .text-warning { color: #f57c00; font-weight: 600; }
+        
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        
+        /* Badges */
+        .badge {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+        
+        .badge-success {
+          background: #e8f5e9;
+          color: #2e7d32;
+        }
+        
+        .badge-danger {
+          background: #ffebee;
+          color: #c62828;
+        }
+        
+        .badge-info {
+          background: #e3f2fd;
+          color: #1565c0;
+        }
+        
+        .badge-warning {
+          background: #fff3e0;
+          color: #f57c00;
+        }
+        
+        /* Footer */
+        .pdf-footer {
+          margin-top: 50px;
+          padding: 25px 40px;
+          background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+          border-top: 2px solid #0d4a2e;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 12px;
+          color: #666;
+        }
+        
+        .footer-left {
+          font-weight: 500;
+        }
+        
+        .footer-center {
+          font-style: italic;
+        }
+        
+        .footer-right {
+          font-weight: 600;
+          color: #0d4a2e;
+        }
+        
+        /* Print Styles */
+        @media print {
+          body {
+            padding: 0;
+          }
+          
+          .pdf-header {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          
+          .data-table thead {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          
+          .metric-card {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          
+          .pdf-footer {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          
+          .data-table tbody tr:nth-child(even) {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          
+          .highlight-row, .summary-row {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+        }
+        
+        /* Page Break */
+        .page-break {
+          page-break-before: always;
+        }
+      </style>
+    </head>
+    <body>
+      <!-- Professional Header -->
+      <div class="pdf-header">
+        <div class="pdf-header-left">
+          <div class="pdf-logo">∞</div>
+          <div class="pdf-brand">
+            <h1>LoopKart</h1>
+            <div class="tagline">Pakistan's Leading POS Business Ecosystem</div>
+            <div class="powered">Powered by Factssolution</div>
+          </div>
+        </div>
+        <div class="pdf-header-right">
+          <h2>${reportTitle}</h2>
+          <p>Generated: ${formattedDate}</p>
+          <p>Time: ${formattedTime}</p>
+          <p>Period: ${periodLabel}</p>
+        </div>
+      </div>
+      
+      <!-- Content Area -->
+      <div class="pdf-content">
+  `;
+};
+
+// Professional PDF Footer
+const generateProfessionalPDFFooter = () => {
+  return `
+      </div>
+      
+      <!-- Professional Footer -->
+      <div class="pdf-footer">
+        <div class="footer-left">© 2025-2026 LoopKart. All Rights Reserved.</div>
+        <div class="footer-center">Powered by Factssolution</div>
+        <div class="footer-right">Confidential Business Report</div>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+export default function Reports() {
+  const [reportType, setReportType] = useState('sales');
+  const [dateRange, setDateRange] = useState('week'); // Default to week to match actual data
+  const [customerSearch, setCustomerSearch] = useState(''); // Customer name search filter
+  const [supplierSearch, setSupplierSearch] = useState(''); // Supplier name search filter
+  const [loading, setLoading] = useState(true);
+  const [reportData, setReportData] = useState<any>(null);
+  const [summaryStatsState, setSummaryStatsState] = useState<any>({
+    totalRevenue: 0,
+    totalOrders: 0,
+    activeCustomers: 0,
+    activeSuppliers: 0,
+    revenueChange: 0,
+    ordersChange: 0,
+    customersChange: 0
+  });
+
+  useEffect(() => {
+    // Debounce rapid filter changes to improve performance
+    const timeoutId = setTimeout(() => {
+      loadReportData();
+    }, 100); // 100ms debounce
+    
+    return () => clearTimeout(timeoutId); // Cleanup on unmount or change
+  }, [reportType, dateRange]);
+
+  const getDateRange = () => {
+    const now = new Date();
+    const startDate = new Date();
+    
+    switch (dateRange) {
+      case 'week':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setMonth(now.getMonth() - 1);
+        break;
+      case 'quarter':
+        startDate.setMonth(now.getMonth() - 3);
+        break;
+      case 'year':
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(now.getDate() - 7);
+    }
+    
+    // Set end date to end of day (23:59:59) to include all orders from that day
+    const endDate = new Date(now);
+    endDate.setHours(23, 59, 59, 999);
+    
+    return {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0]
+    };
+  };
+
+  const loadReportData = async () => {
+    try {
+      setLoading(true);
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000) // 10 second timeout
+      );
+      
+      const { startDate, endDate } = getDateRange();
+      
+      // Load report data based on type with timeout
+      let data;
+      switch (reportType) {
+        case 'sales':
+          data = await Promise.race([
+            api.getSalesAnalytics({ startDate, endDate }),
+            timeoutPromise
+          ]);
+          break;
+        case 'customer':
+          data = await Promise.race([
+            api.getCustomerReport({ startDate, endDate }),
+            timeoutPromise
+          ]);
+          break;
+        case 'supplier':
+          data = await Promise.race([
+            api.getSupplierReport({ startDate, endDate }),
+            timeoutPromise
+          ]);
+          break;
+        case 'employee':
+          data = await Promise.race([
+            api.getEmployeeReport({ startDate, endDate }),
+            timeoutPromise
+          ]);
+          break;
+        case 'creditDebit':
+          data = await Promise.race([
+            api.getTransactions({ startDate, endDate }),
+            timeoutPromise
+          ]);
+          console.log('📊 Credit/Debit Report Data:', data);
+          break;
+        case 'generalLedger':
+          const [transactions, salesData] = await Promise.all([
+            Promise.race([api.getTransactions({ startDate, endDate }), timeoutPromise]) as Promise<any>,
+            Promise.race([api.getSalesAnalytics({ startDate, endDate }), timeoutPromise]) as Promise<any>
+          ]);
+          console.log('📊 General Ledger Data:', { transactions, salesData });
+          data = { 
+            ledger: transactions.transactions || [],
+            sales: salesData,
+            summary: transactions.summary
+          };
+          break;
+        case 'profitLoss':
+          data = await Promise.race([
+            api.getSalesAnalytics({ startDate, endDate }),
+            timeoutPromise
+          ]);
+          break;
+        default:
+          data = null;
+      }
+      
+      setReportData(data);
+      
+      // Calculate summary statistics for Sales Report only
+      if (reportType === 'sales' && data) {
+        calculateSummaryStats(data, startDate, endDate);
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to load report:', error);
+      toast.error('Failed to load report data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateSummaryStats = async (data: any, startDate: string, endDate: string) => {
+    try {
+      // Calculate previous period for comparison
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      
+      const prevStart = new Date(start);
+      prevStart.setDate(prevStart.getDate() - daysDiff);
+      const prevEnd = new Date(start);
+      prevEnd.setDate(prevEnd.getDate() - 1);
+      
+      // Get previous period data
+      const prevData = await api.getSalesAnalytics({ 
+        startDate: prevStart.toISOString().split('T')[0],
+        endDate: prevEnd.toISOString().split('T')[0]
+      });
+      
+      // Calculate current period totals
+      const currentRevenue = data.dailySales?.reduce((sum: number, day: any) => sum + day.revenue, 0) || 0;
+      const currentOrders = data.dailySales?.reduce((sum: number, day: any) => sum + day.orders, 0) || 0;
+      
+      // Calculate previous period totals
+      const prevRevenue = prevData.dailySales?.reduce((sum: number, day: any) => sum + day.revenue, 0) || 0;
+      const prevOrders = prevData.dailySales?.reduce((sum: number, day: any) => sum + day.orders, 0) || 0;
+      
+      // Calculate unique customers (from orders)
+      const orders = await api.getOrders();
+      const uniqueCustomers = new Set(
+        (orders.orders || [])
+          .filter((o: any) => o.customer_name && o.customer_name !== 'Walk-in Customer')
+          .map((o: any) => o.customer_name)
+      ).size;
+      
+      // Get active suppliers count
+      const suppliers = await api.getSuppliers();
+      const activeSuppliers = (suppliers || []).filter((s: any) => s.status === 'active').length;
+      
+      // Calculate percentage changes
+      const revenueChange = prevRevenue > 0 ? ((currentRevenue - prevRevenue) / prevRevenue * 100) : 0;
+      const ordersChange = prevOrders > 0 ? ((currentOrders - prevOrders) / prevOrders * 100) : 0;
+      
+      console.log('📈 Summary Stats Calculated:', {
+        currentRevenue,
+        currentOrders,
+        uniqueCustomers,
+        activeSuppliers,
+        revenueChange: revenueChange.toFixed(1),
+        ordersChange: ordersChange.toFixed(1)
+      });
+      
+      setSummaryStatsState({
+        totalRevenue: currentRevenue,
+        totalOrders: currentOrders,
+        activeCustomers: uniqueCustomers,
+        activeSuppliers: activeSuppliers,
+        revenueChange: parseFloat(revenueChange.toFixed(1)),
+        ordersChange: parseFloat(ordersChange.toFixed(1)),
+        customersChange: 15 // Can be calculated if we track historical customer data
+      });
+    } catch (error) {
+      console.error(' Error calculating summary stats:', error);
+    }
+  };
+
+  const downloadPDF = () => {
+    // Validate data is loaded
+    if (loading || !reportData) {
+      toast.error('Please wait for report data to load before exporting PDF');
+      return;
+    }
+    
+    console.log('📄 PDF Export - Report Type:', reportType);
+    console.log('📊 PDF Export - Report Data:', reportData);
+    console.log('📊 PDF Export - Data Keys:', Object.keys(reportData));
+    
+    toast.success(`Generating ${reportType} report PDF...`);
+    
+    // Create a new window for PDF generation
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('Please allow popups to download PDF');
+      return;
+    }
+
+    // Get report title
+    const reportTitles: { [key: string]: string } = {
+      sales: 'Sales Report',
+      customer: 'Customer Report',
+      supplier: 'Supplier Report',
+      employee: 'Employee Report',
+      creditDebit: 'Credit/Debit Report',
+      generalLedger: 'General Ledger Report',
+      profitLoss: 'Profit & Loss Report'
+    };
+    const reportTitle = reportTitles[reportType] || 'Report';
+
+    // Generate HTML content for PDF using professional template
+    let htmlContent = generateProfessionalPDFHeader(reportTitle, dateRange);
+    
+    // Generate report-specific content
+    if (!reportData) {
+      htmlContent += `<p>No data available for this report.</p>`;
+    } else {
+    switch (reportType) {
+      case 'sales':
+        // Calculate totals from dailySales
+        const totalRevenue = reportData.dailySales?.reduce((sum: number, day: any) => sum + day.revenue, 0) || 0;
+        const totalOrders = reportData.dailySales?.reduce((sum: number, day: any) => sum + day.orders, 0) || 0;
+        const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+        
+        htmlContent += `
+          <div class="section-title">Sales Summary</div>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="summary-label">Total Revenue</div>
+              <div class="summary-value">Rs ${totalRevenue.toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Total Orders</div>
+              <div class="summary-value">${totalOrders}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Average Order Value</div>
+              <div class="summary-value">Rs ${avgOrderValue.toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Active Days</div>
+              <div class="summary-value">${reportData.dailySales?.length || 0}</div>
+            </div>
+          </div>
+          
+          <div class="section-title" style="margin-top: 30px;">Daily Breakdown</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Orders</th>
+                <th>Revenue</th>
+                <th>Avg Order Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(reportData.dailySales || []).map((day: any) => `
+                <tr>
+                  <td>${new Date(day.date).toLocaleDateString()}</td>
+                  <td>${day.orders}</td>
+                  <td>Rs ${day.revenue.toLocaleString()}</td>
+                  <td>Rs ${day.orders > 0 ? Math.round(day.revenue / day.orders).toLocaleString() : 0}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        break;
+
+      case 'customer':
+        // Calculate customer segments for PDF
+        const allCust = reportData.customers || [];
+        const custSummary = reportData.summary || {};
+        
+        // Filter by search if provided
+        const filteredCust = customerSearch
+          ? allCust.filter((c: any) => 
+              (c.name || '').toLowerCase().includes(customerSearch.toLowerCase()) ||
+              (c.phone || '').includes(customerSearch)
+            )
+          : allCust;
+        
+        const segments = {
+          VIP: { count: 0, value: 0 },
+          Regular: { count: 0, value: 0 },
+          New: { count: 0, value: 0 }
+        };
+        
+        filteredCust.forEach((customer: any) => {
+          if (customer.totalSpent >= 5000) {
+            segments.VIP.count++;
+            segments.VIP.value += customer.totalSpent;
+          } else if (customer.totalSpent >= 1000) {
+            segments.Regular.count++;
+            segments.Regular.value += customer.totalSpent;
+          } else {
+            segments.New.count++;
+            segments.New.value += customer.totalSpent;
+          }
+        });
+        
+        const customerSegments: any[] = [
+          { segment: 'VIP', count: segments.VIP.count, value: segments.VIP.value, percentage: 0 },
+          { segment: 'Regular', count: segments.Regular.count, value: segments.Regular.value, percentage: 0 },
+          { segment: 'New', count: segments.New.count, value: segments.New.value, percentage: 0 }
+        ];
+        
+        const totalCust = filteredCust.length;
+        customerSegments.forEach(seg => {
+          seg.percentage = totalCust > 0 ? Math.round((seg.count / totalCust) * 100) : 0;
+        });
+        
+        htmlContent += `
+          <div class="section-title">Customer Summary</div>
+          ${customerSearch ? `<p style="margin-bottom: 15px; color: #666;">Search: "${customerSearch}" - ${filteredCust.length} customer(s) found</p>` : ''}
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="summary-label">Total Customers</div>
+              <div class="summary-value">${custSummary.totalCustomers || filteredCust.length}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Total Revenue</div>
+              <div class="summary-value">Rs ${(custSummary.totalRevenue || 0).toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Avg Customer Value</div>
+              <div class="summary-value">Rs ${(custSummary.averageCustomerValue || 0).toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Avg Visits</div>
+              <div class="summary-value">${(custSummary.averageVisitsPerCustomer || 0).toFixed(1)}</div>
+            </div>
+          </div>
+          
+          <div class="section-title" style="margin-top: 30px;">Customer Segments</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Segment</th>
+                <th>Count</th>
+                <th>Percentage</th>
+                <th>Total Value</th>
+                <th>Avg Value per Customer</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${customerSegments.map(item => `
+                <tr>
+                  <td><span class="badge ${item.segment === 'VIP' ? 'badge-active' : ''}">${item.segment}</span></td>
+                  <td>${item.count}</td>
+                  <td>${item.percentage}%</td>
+                  <td>Rs ${item.value.toLocaleString()}</td>
+                  <td>Rs ${item.count > 0 ? Math.round(item.value / item.count).toLocaleString() : 0}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <div class="section-title" style="margin-top: 30px;">Top 10 Customers with Store Visits</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Customer Name</th>
+                <th>Phone</th>
+                <th>Store Visits</th>
+                <th>Total Orders</th>
+                <th>Total Spent</th>
+                <th>Avg Order Value</th>
+                <th>Last Visit</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredCust.slice(0, 10).map((customer: any) => `
+                <tr>
+                  <td>${customer.name || 'Walk-in Customer'}</td>
+                  <td>${customer.phone || 'N/A'}</td>
+                  <td style="text-align: center;"><strong>${customer.totalVisits || customer.totalOrders || 0} times</strong></td>
+                  <td>${customer.totalOrders || 0}</td>
+                  <td>Rs ${(customer.totalSpent || 0).toLocaleString()}</td>
+                  <td>Rs ${Math.round(customer.averageOrderValue || 0).toLocaleString()}</td>
+                  <td>${customer.lastVisit ? new Date(customer.lastVisit).toLocaleDateString() : 'N/A'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        break;
+
+      case 'supplier':
+        // Use suppliers from API response
+        const allSuppliersPDF = Array.isArray(reportData) ? reportData : (reportData.suppliers || []);
+        
+        // Filter by search if provided
+        const filteredSuppliers = supplierSearch
+          ? allSuppliersPDF.filter((s: any) => 
+              (s.name || '').toLowerCase().includes(supplierSearch.toLowerCase()) ||
+              (s.contact || s.phone || '').toLowerCase().includes(supplierSearch.toLowerCase())
+            )
+          : allSuppliersPDF;
+        
+        // Calculate summary for PDF
+        const pdfTotalSuppliers = filteredSuppliers.length;
+        const pdfTotalPurchases = filteredSuppliers.reduce((sum: number, s: any) => sum + (s.totalPurchases || s.opening_balance || 0), 0);
+        const pdfTotalOutstanding = filteredSuppliers.reduce((sum: number, s: any) => sum + (s.outstanding || s.current_balance || 0), 0);
+        const pdfActiveSuppliers = filteredSuppliers.filter((s: any) => s.status === 'active' || s.status === 'Active').length;
+        const pdfAvgPaymentRatio = pdfTotalPurchases > 0 ? Math.round(((pdfTotalPurchases - pdfTotalOutstanding) / pdfTotalPurchases) * 100) : 0;
+        
+        htmlContent += `
+          <div class="section-title">Supplier Summary</div>
+          ${supplierSearch ? `<p style="margin-bottom: 15px; color: #666;">Search: "${supplierSearch}" - ${filteredSuppliers.length} supplier(s) found</p>` : ''}
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="summary-label">Total Suppliers</div>
+              <div class="summary-value">${pdfTotalSuppliers}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Active Suppliers</div>
+              <div class="summary-value">${pdfActiveSuppliers}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Total Purchases</div>
+              <div class="summary-value">Rs ${pdfTotalPurchases.toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Outstanding Balance</div>
+              <div class="summary-value">Rs ${pdfTotalOutstanding.toLocaleString()}</div>
+            </div>
+          </div>
+          
+          <div class="summary-grid" style="margin-top: 15px;">
+            <div class="summary-card">
+              <div class="summary-label">Avg Payment Ratio</div>
+              <div class="summary-value">${pdfAvgPaymentRatio}%</div>
+            </div>
+          </div>
+          
+          <div class="section-title" style="margin-top: 30px;">Supplier Details</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Supplier Name</th>
+                <th>Contact</th>
+                <th>Total Purchases</th>
+                <th>Outstanding Balance</th>
+                <th>Status</th>
+                <th>Payment Ratio</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredSuppliers.map((s: any) => {
+                const purchases = s.totalPurchases || s.opening_balance || 0;
+                const outstanding = s.outstanding || s.current_balance || 0;
+                const ratio = purchases > 0 ? Math.round(((purchases - outstanding) / purchases) * 100) : 0;
+                return `
+                  <tr>
+                    <td>${s.name || 'N/A'}</td>
+                    <td>${s.contact || s.phone || 'N/A'}</td>
+                    <td>Rs ${purchases.toLocaleString()}</td>
+                    <td class="${outstanding > 30000 ? 'text-red' : 'text-green'}">Rs ${outstanding.toLocaleString()}</td>
+                    <td><span class="badge ${s.status === 'active' || s.status === 'Active' ? 'badge-active' : 'badge-inactive'}">${s.status || 'Active'}</span></td>
+                    <td><strong>${ratio}%</strong></td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        `;
+        break;
+
+      case 'employee':
+        // Get employee data from API response
+        const empData = reportData?.data?.employees || reportData?.employees || [];
+        const empSummary = reportData?.data?.summary || reportData?.summary || {};
+        
+        console.log('📊 PDF Export - Employee Data:', {
+          totalEmployees: empData.length,
+          empSummary,
+          firstEmployee: empData[0]
+        });
+        
+        htmlContent += `
+          <div class="section-title">Employee Performance Summary</div>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="summary-label">Total Employees</div>
+              <div class="summary-value">${empSummary.totalEmployees || empData.length}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Total Sales</div>
+              <div class="summary-value">Rs ${(empSummary.totalSales || 0).toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Total Orders</div>
+              <div class="summary-value">${empSummary.totalOrders || 0}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Avg Performance</div>
+              <div class="summary-value">Rs ${(empSummary.avgPerformance || 0).toLocaleString()}</div>
+            </div>
+          </div>
+          
+          <div class="section-title" style="margin-top: 30px;">Employee Performance Details</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Employee Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Role</th>
+                <th style="text-align: right;">Total Orders</th>
+                <th style="text-align: right;">Total Sales</th>
+                <th style="text-align: right;">Avg Order Value</th>
+                <th style="text-align: right;">Profit</th>
+                <th style="text-align: right;">Margin</th>
+                <th style="text-align: center;">Performance</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${empData.map((e: any) => {
+                const perfLevel = e.profitMargin >= 40 ? 'Excellent' :
+                                e.profitMargin >= 25 ? 'Good' :
+                                e.profitMargin >= 15 ? 'Average' : 'Needs Improvement';
+                return `
+                <tr>
+                  <td>${e.name}</td>
+                  <td>${e.email || 'N/A'}</td>
+                  <td>${e.phone}</td>
+                  <td>${e.role}</td>
+                  <td style="text-align: right;">${e.totalOrders}</td>
+                  <td style="text-align: right;">Rs ${e.totalSales.toLocaleString()}</td>
+                  <td style="text-align: right;">Rs ${e.avgOrderValue.toLocaleString()}</td>
+                  <td style="text-align: right; color: #388e3c;">Rs ${e.totalProfit.toLocaleString()}</td>
+                  <td style="text-align: right;">${e.profitMargin}%</td>
+                  <td style="text-align: center;"><span class="badge ${perfLevel === 'Excellent' || perfLevel === 'Good' ? 'badge-active' : ''}">${perfLevel}</span></td>
+                </tr>
+              `}).join('')}
+            </tbody>
+          </table>
+        `;
+        break;
+
+      case 'creditDebit':
+        // Get transaction data from API response
+        const cdTransactions = reportData?.transactions || [];
+        const cdSummary = reportData?.summary || {};
+        
+        console.log('📊 PDF Export - Credit/Debit Data:', {
+          totalTransactions: cdTransactions.length,
+          cdSummary,
+          firstTransaction: cdTransactions[0]
+        });
+        
+        // Calculate totals
+        const cdTotalCredit = cdTransactions
+          .filter((t: any) => t.type === 'credit')
+          .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+        
+        const cdTotalDebit = cdTransactions
+          .filter((t: any) => t.type === 'debit')
+          .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+        
+        htmlContent += `
+          <div class="section-title">Credit/Debit Summary</div>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="summary-label">Total Credit</div>
+              <div class="summary-value">Rs ${Math.round(cdTotalCredit).toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Total Debit</div>
+              <div class="summary-value">Rs ${Math.round(cdTotalDebit).toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Net Balance</div>
+              <div class="summary-value">Rs ${Math.round(cdTotalCredit - cdTotalDebit).toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Total Transactions</div>
+              <div class="summary-value">${cdTransactions.length}</div>
+            </div>
+          </div>
+          
+          <div class="section-title" style="margin-top: 30px;">Credit/Debit Transactions</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Supplier</th>
+                <th>Type</th>
+                <th style="text-align: right;">Amount</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${cdTransactions.length === 0 ? '<tr><td colspan="5" style="text-align: center; padding: 20px;">No transactions found</td></tr>' :
+              cdTransactions.map((t: any) => `
+                <tr>
+                  <td>${new Date(t.transaction_date || t.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                  <td>${t.supplier?.name || t.supplier_name || 'N/A'}</td>
+                  <td><span class="badge ${t.type === 'credit' ? 'badge-active' : 'badge-inactive'}">${t.type === 'credit' ? 'Credit' : 'Debit'}</span></td>
+                  <td style="text-align: right; color: ${t.type === 'credit' ? '#388e3c' : '#d32f2f'}; font-weight: bold;">Rs ${parseFloat(t.amount || 0).toLocaleString()}</td>
+                  <td>${t.description || 'N/A'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        break;
+
+      case 'generalLedger':
+        // Get ledger data from API response
+        const glTransactions = reportData?.ledger || [];
+        const glSummary = reportData?.summary || {};
+        const glSalesData = reportData?.sales || {};
+        
+        console.log('📊 PDF Export - General Ledger Data:', {
+          totalTransactions: glTransactions.length,
+          glSummary,
+          firstTransaction: glTransactions[0]
+        });
+        
+        // Calculate summary statistics
+        const glTotalCredit = glTransactions
+          .filter((t: any) => t.type === 'credit')
+          .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+        
+        const glTotalDebit = glTransactions
+          .filter((t: any) => t.type === 'debit')
+          .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+        
+        const glNetBalance = glTotalCredit - glTotalDebit;
+        
+        // Calculate sales metrics
+        const glTotalRevenue = glSalesData?.dailySales?.reduce((sum: number, day: any) => sum + day.revenue, 0) || 0;
+        const glTotalOrders = glSalesData?.dailySales?.reduce((sum: number, day: any) => sum + day.orders, 0) || 0;
+        
+        htmlContent += `
+          <div class="section-title">General Ledger Summary</div>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="summary-label">Total Credit</div>
+              <div class="summary-value" style="color: #388e3c;">Rs ${Math.round(glTotalCredit).toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Total Debit</div>
+              <div class="summary-value" style="color: #d32f2f;">Rs ${Math.round(glTotalDebit).toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Net Balance</div>
+              <div class="summary-value" style="color: ${glNetBalance >= 0 ? '#388e3c' : '#d32f2f'};">Rs ${Math.round(glNetBalance).toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Total Transactions</div>
+              <div class="summary-value">${glTransactions.length}</div>
+            </div>
+          </div>
+          
+          <div class="section-title" style="margin-top: 30px;">Sales Performance</div>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="summary-label">Total Revenue</div>
+              <div class="summary-value">Rs ${Math.round(glTotalRevenue).toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Total Orders</div>
+              <div class="summary-value">${glTotalOrders}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Average Order Value</div>
+              <div class="summary-value">Rs ${glTotalOrders > 0 ? Math.round(glTotalRevenue / glTotalOrders).toLocaleString() : 0}</div>
+            </div>
+          </div>
+          
+          <div class="section-title" style="margin-top: 30px;">Transaction Details</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 15%;">Date</th>
+                <th style="width: 25%;">Supplier</th>
+                <th style="width: 12%;">Type</th>
+                <th style="width: 18%; text-align: right;">Amount</th>
+                <th style="width: 30%;">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${glTransactions.length === 0 ? '<tr><td colspan="5" style="text-align: center; padding: 20px;">No transactions found</td></tr>' :
+              glTransactions.map((t: any) => `
+                <tr>
+                  <td>${new Date(t.transaction_date || t.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                  <td style="font-weight: 500;">${t.supplier?.name || t.supplier_name || 'N/A'}</td>
+                  <td><span class="badge ${t.type === 'credit' ? 'badge-active' : 'badge-inactive'}">${t.type === 'credit' ? 'Credit' : 'Debit'}</span></td>
+                  <td style="text-align: right; color: ${t.type === 'credit' ? '#388e3c' : '#d32f2f'}; font-weight: bold;">Rs ${parseFloat(t.amount || 0).toLocaleString()}</td>
+                  <td>${t.description || 'N/A'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          ${glTransactions.length > 0 ? `
+          <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+            <strong>Totals Summary:</strong><br>
+            <span style="color: #388e3c;">Total Credit: Rs ${Math.round(glTotalCredit).toLocaleString()}</span> | 
+            <span style="color: #d32f2f;">Total Debit: Rs ${Math.round(glTotalDebit).toLocaleString()}</span> | 
+            <strong>Net Balance: Rs ${Math.round(glNetBalance).toLocaleString()}</strong>
+          </div>
+          ` : ''}
+        `;
+        break;
+
+      case 'profitLoss':
+        // Calculate profit/loss from sales data
+        const plDailySales = reportData?.dailySales || [];
+        const plTotalRevenue = plDailySales.reduce((sum: number, day: any) => sum + (day.revenue || 0), 0);
+        const plTotalOrders = plDailySales.reduce((sum: number, day: any) => sum + (day.orders || 0), 0);
+        
+        // Estimate expenses
+        const plCOGS = plTotalRevenue * 0.4;
+        const plSalaries = 50000;
+        const plRent = 30000;
+        const plUtilities = 10000;
+        const plMarketing = 5000;
+        const plOther = 5000;
+        const plTotalExpenses = plCOGS + plSalaries + plRent + plUtilities + plMarketing + plOther;
+        const plGrossProfit = plTotalRevenue - plCOGS;
+        const plNetProfit = plTotalRevenue - plTotalExpenses;
+        const plProfitMargin = plTotalRevenue > 0 ? (plNetProfit / plTotalRevenue) * 100 : 0;
+        
+        console.log('📊 PDF Export - Profit/Loss Data:', {
+          totalRevenue: plTotalRevenue,
+          totalExpenses: plTotalExpenses,
+          netProfit: plNetProfit
+        });
+        
+        htmlContent += `
+          <div class="section-title">Profit & Loss Summary</div>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="summary-label">Total Revenue</div>
+              <div class="summary-value" style="color: #388e3c;">Rs ${Math.round(plTotalRevenue).toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Total Expenses</div>
+              <div class="summary-value" style="color: #d32f2f;">Rs ${Math.round(plTotalExpenses).toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Net Profit</div>
+              <div class="summary-value" style="color: ${plNetProfit >= 0 ? '#388e3c' : '#d32f2f'};">Rs ${Math.round(plNetProfit).toLocaleString()}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Profit Margin</div>
+              <div class="summary-value">${plProfitMargin.toFixed(1)}%</div>
+            </div>
+          </div>
+          
+          <div class="section-title" style="margin-top: 30px;">Detailed Breakdown</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50%;">Category</th>
+                <th style="width: 25%; text-align: right;">Amount</th>
+                <th style="width: 25%; text-align: right;">% of Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background: #e8f5e9; font-weight: bold;">
+                <td>Revenue</td>
+                <td style="text-align: right; color: #388e3c;">Rs ${Math.round(plTotalRevenue).toLocaleString()}</td>
+                <td style="text-align: right;">100%</td>
+              </tr>
+              <tr>
+                <td style="padding-left: 30px;">Cost of Goods Sold</td>
+                <td style="text-align: right; color: #d32f2f;">- Rs ${Math.round(plCOGS).toLocaleString()}</td>
+                <td style="text-align: right;">${plTotalRevenue > 0 ? ((plCOGS / plTotalRevenue) * 100).toFixed(1) : 0}%</td>
+              </tr>
+              <tr style="background: #e3f2fd; font-weight: bold;">
+                <td>Gross Profit</td>
+                <td style="text-align: right; color: #1976d2;">Rs ${Math.round(plGrossProfit).toLocaleString()}</td>
+                <td style="text-align: right;">${plTotalRevenue > 0 ? ((plGrossProfit / plTotalRevenue) * 100).toFixed(1) : 0}%</td>
+              </tr>
+              <tr>
+                <td style="padding-left: 30px;">Salaries & Wages</td>
+                <td style="text-align: right; color: #d32f2f;">- Rs ${Math.round(plSalaries).toLocaleString()}</td>
+                <td style="text-align: right;">${plTotalRevenue > 0 ? ((plSalaries / plTotalRevenue) * 100).toFixed(1) : 0}%</td>
+              </tr>
+              <tr>
+                <td style="padding-left: 30px;">Rent & Lease</td>
+                <td style="text-align: right; color: #d32f2f;">- Rs ${Math.round(plRent).toLocaleString()}</td>
+                <td style="text-align: right;">${plTotalRevenue > 0 ? ((plRent / plTotalRevenue) * 100).toFixed(1) : 0}%</td>
+              </tr>
+              <tr>
+                <td style="padding-left: 30px;">Utilities</td>
+                <td style="text-align: right; color: #d32f2f;">- Rs ${Math.round(plUtilities).toLocaleString()}</td>
+                <td style="text-align: right;">${plTotalRevenue > 0 ? ((plUtilities / plTotalRevenue) * 100).toFixed(1) : 0}%</td>
+              </tr>
+              <tr>
+                <td style="padding-left: 30px;">Marketing & Advertising</td>
+                <td style="text-align: right; color: #d32f2f;">- Rs ${Math.round(plMarketing).toLocaleString()}</td>
+                <td style="text-align: right;">${plTotalRevenue > 0 ? ((plMarketing / plTotalRevenue) * 100).toFixed(1) : 0}%</td>
+              </tr>
+              <tr>
+                <td style="padding-left: 30px;">Other Expenses</td>
+                <td style="text-align: right; color: #d32f2f;">- Rs ${Math.round(plOther).toLocaleString()}</td>
+                <td style="text-align: right;">${plTotalRevenue > 0 ? ((plOther / plTotalRevenue) * 100).toFixed(1) : 0}%</td>
+              </tr>
+              <tr style="background: #f5f5f5; font-weight: bold;">
+                <td>Total Expenses</td>
+                <td style="text-align: right; color: #d32f2f;">- Rs ${Math.round(plTotalExpenses).toLocaleString()}</td>
+                <td style="text-align: right;">${plTotalRevenue > 0 ? ((plTotalExpenses / plTotalRevenue) * 100).toFixed(1) : 0}%</td>
+              </tr>
+              <tr style="background: #e8f5e9; font-weight: bold; border-top: 2px solid #333;">
+                <td style="font-size: 16px;">Net Profit</td>
+                <td style="text-align: right; font-size: 16px; color: ${plNetProfit >= 0 ? '#388e3c' : '#d32f2f'};">Rs ${Math.round(plNetProfit).toLocaleString()}</td>
+                <td style="text-align: right; font-size: 16px;">${plProfitMargin.toFixed(1)}%</td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+        break;
+    }
+    }
+
+    // Add footer
+    htmlContent += `
+        <div class="footer">
+          <p>Powered by Factssolution, All Rights Reserved 2025-2026</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Write content to new window and trigger print
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    
+    // Wait for content to load then print
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print();
+        toast.success('PDF generated! Use Print dialog to save as PDF');
+      }, 250);
+    };
+  };
+
+  const downloadCSV = () => {
+    // Validate data is loaded
+    if (loading || !reportData) {
+      toast.error('Please wait for report data to load before exporting CSV');
+      return;
+    }
+    
+    console.log('📈 CSV Export - Report Type:', reportType);
+    console.log('📊 CSV Export - Report Data:', reportData);
+    console.log('📊 CSV Export - Data Keys:', Object.keys(reportData));
+    
+    let csvContent = '';
+    const filename = `${reportType}_report_${dateRange}.csv`;
+
+    // Generate CSV based on report type
+    if (!reportData) {
+      csvContent = 'No data available\n';
+    } else {
+    switch (reportType) {
+      case 'sales':
+        // Use dailySales from API response
+        const dailySales = reportData.dailySales || [];
+        csvContent = 'Date,Orders,Revenue,Avg Order Value\n';
+        
+        dailySales.forEach((day: any) => {
+          const date = new Date(day.date).toLocaleDateString('en-GB', { 
+            day: '2-digit', 
+            month: 'short', 
+            year: 'numeric' 
+          });
+          const avgOrderValue = day.orders > 0 ? Math.round(day.revenue / day.orders) : 0;
+          csvContent += `${date},${day.orders},${day.revenue},${avgOrderValue}\n`;
+        });
+        
+        // Add summary row
+        if (dailySales.length > 0) {
+          const totalRevenue = dailySales.reduce((sum: number, day: any) => sum + day.revenue, 0);
+          const totalOrders = dailySales.reduce((sum: number, day: any) => sum + day.orders, 0);
+          const overallAvg = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+          csvContent += `\nTOTAL,${totalOrders},${totalRevenue},${overallAvg}\n`;
+        }
+        break;
+      case 'customer':
+        csvContent = 'Segment,Count,Percentage,Total Value,Avg Value per Customer\n';
+        const custData = reportData.customers || [];
+        const custSummary = reportData.summary || {};
+        
+        // Calculate segments for CSV
+        const csvSegments: any[] = [
+          { segment: 'VIP', count: 0, value: 0, percentage: 0 },
+          { segment: 'Regular', count: 0, value: 0, percentage: 0 },
+          { segment: 'New', count: 0, value: 0, percentage: 0 }
+        ];
+        
+        custData.forEach((customer: any) => {
+          if (customer.totalSpent >= 5000) {
+            csvSegments[0].count++;
+            csvSegments[0].value += customer.totalSpent;
+          } else if (customer.totalSpent >= 1000) {
+            csvSegments[1].count++;
+            csvSegments[1].value += customer.totalSpent;
+          } else {
+            csvSegments[2].count++;
+            csvSegments[2].value += customer.totalSpent;
+          }
+        });
+        
+        const totalCustomers = custData.length;
+        csvSegments.forEach(seg => {
+          seg.percentage = totalCustomers > 0 ? Math.round((seg.count / totalCustomers) * 100) : 0;
+        });
+        
+        csvSegments.forEach(item => {
+          csvContent += `${item.segment},${item.count},${item.percentage}%,${item.value},${item.count > 0 ? Math.round(item.value / item.count) : 0}\n`;
+        });
+        break;
+      case 'supplier':
+        // Use suppliers from API response
+        const csvSuppliers = Array.isArray(reportData) ? reportData : (reportData.suppliers || []);
+        
+        // Filter by search if provided
+        const filteredCSVSups = supplierSearch
+          ? csvSuppliers.filter((s: any) => 
+              (s.name || '').toLowerCase().includes(supplierSearch.toLowerCase()) ||
+              (s.contact || s.phone || '').toLowerCase().includes(supplierSearch.toLowerCase())
+            )
+          : csvSuppliers;
+        
+        csvContent = 'Supplier Name,Contact,Total Purchases,Outstanding Balance,Status,Payment Ratio\n';
+        
+        filteredCSVSups.forEach((s: any) => {
+          const purchases = s.totalPurchases || s.opening_balance || 0;
+          const outstanding = s.outstanding || s.current_balance || 0;
+          const ratio = purchases > 0 ? Math.round(((purchases - outstanding) / purchases) * 100) : 0;
+          
+          csvContent += `${s.name || 'N/A'},${s.contact || s.phone || 'N/A'},${purchases},${outstanding},${s.status || 'Active'},${ratio}%\n`;
+        });
+        
+        // Add summary row
+        if (filteredCSVSups.length > 0) {
+          const csvTotalPurchases = filteredCSVSups.reduce((sum: number, s: any) => sum + (s.totalPurchases || s.opening_balance || 0), 0);
+          const csvTotalOutstanding = filteredCSVSups.reduce((sum: number, s: any) => sum + (s.outstanding || s.current_balance || 0), 0);
+          const csvAvgRatio = csvTotalPurchases > 0 ? Math.round(((csvTotalPurchases - csvTotalOutstanding) / csvTotalPurchases) * 100) : 0;
+          
+          csvContent += `\nTOTAL,,${csvTotalPurchases},${csvTotalOutstanding},,${csvAvgRatio}%\n`;
+          csvContent += `Suppliers: ${filteredCSVSups.length}, Active: ${filteredCSVSups.filter((s: any) => s.status === 'active' || s.status === 'Active').length}\n`;
+        }
+        break;
+      case 'employee':
+        // Get employee data from API response
+        const empCSVData = reportData?.data?.employees || reportData?.employees || [];
+        csvContent = 'Employee Name,Email,Phone,Role,Total Orders,Total Sales,Avg Order Value,Profit,Profit Margin,Performance\n';
+        empCSVData.forEach((e: any) => {
+          const perfLevel = e.profitMargin >= 40 ? 'Excellent' :
+                          e.profitMargin >= 25 ? 'Good' :
+                          e.profitMargin >= 15 ? 'Average' : 'Needs Improvement';
+          csvContent += `${e.name},${e.email || 'N/A'},${e.phone},${e.role},${e.totalOrders},${e.totalSales},${e.avgOrderValue},${e.totalProfit},${e.profitMargin}%,${perfLevel}\n`;
+        });
+        
+        // Add summary row
+        if (empCSVData.length > 0) {
+          const totalEmpSales = empCSVData.reduce((sum: number, e: any) => sum + (e.totalSales || 0), 0);
+          const totalEmpOrders = empCSVData.reduce((sum: number, e: any) => sum + (e.totalOrders || 0), 0);
+          const totalEmpProfit = empCSVData.reduce((sum: number, e: any) => sum + (e.totalProfit || 0), 0);
+          const avgEmpMargin = empCSVData.length > 0 ? Math.round(empCSVData.reduce((sum: number, e: any) => sum + (e.profitMargin || 0), 0) / empCSVData.length) : 0;
+          csvContent += `\nTOTAL,,,${empCSVData.length},${totalEmpOrders},${totalEmpSales},${totalEmpOrders > 0 ? Math.round(totalEmpSales / totalEmpOrders) : 0},${totalEmpProfit},${avgEmpMargin}%,\n`;
+        }
+        break;
+      case 'creditDebit':
+        // Get transaction data from API response
+        const csvCDTransactions = reportData?.transactions || [];
+        csvContent = 'Date,Supplier,Type,Amount,Description\n';
+        csvCDTransactions.forEach((t: any) => {
+          const date = new Date(t.transaction_date || t.created_at).toLocaleDateString('en-GB');
+          const supplier = t.supplier?.name || t.supplier_name || 'N/A';
+          const type = t.type === 'credit' ? 'Credit' : 'Debit';
+          const amount = parseFloat(t.amount || 0);
+          const description = (t.description || 'N/A').replace(/,/g, ';'); // Replace commas to avoid CSV issues
+          
+          csvContent += `${date},${supplier},${type},${amount},${description}\n`;
+        });
+        
+        // Add summary rows
+        if (csvCDTransactions.length > 0) {
+          const csvTotalCredit = csvCDTransactions
+            .filter((t: any) => t.type === 'credit')
+            .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+          
+          const csvTotalDebit = csvCDTransactions
+            .filter((t: any) => t.type === 'debit')
+            .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+          
+          csvContent += `\nSUMMARY,,,,,\n`;
+          csvContent += `Total Credit,,,${csvTotalCredit},,\n`;
+          csvContent += `Total Debit,,,${csvTotalDebit},,\n`;
+          csvContent += `Net Balance,,,${csvTotalCredit - csvTotalDebit},,\n`;
+          csvContent += `Total Transactions,${csvCDTransactions.length},,,,\n`;
+        }
+        break;
+      case 'generalLedger':
+        // Get ledger data from API response
+        const csvGLTransactions = reportData?.ledger || [];
+        const csvGLSalesData = reportData?.sales || {};
+        
+        csvContent = 'GENERAL LEDGER REPORT\n';
+        csvContent += `Date Range,${dateRange === 'week' ? 'This Week' : dateRange === 'month' ? 'This Month' : dateRange === 'quarter' ? 'This Quarter' : 'This Year'}\n`;
+        csvContent += `Generated,${new Date().toLocaleString()}\n`;
+        csvContent += `\n`;
+        
+        csvContent += 'TRANSACTION DETAILS\n';
+        csvContent = 'Date,Supplier,Type,Amount,Description\n';
+        csvGLTransactions.forEach((t: any) => {
+          const date = new Date(t.transaction_date || t.created_at).toLocaleDateString('en-GB');
+          const supplier = t.supplier?.name || t.supplier_name || 'N/A';
+          const type = t.type === 'credit' ? 'Credit' : 'Debit';
+          const amount = parseFloat(t.amount || 0);
+          const description = (t.description || 'N/A').replace(/,/g, ';');
+          
+          csvContent += `${date},${supplier},${type},${amount},${description}\n`;
+        });
+        
+        // Calculate and add summary
+        if (csvGLTransactions.length > 0) {
+          const csvTotalCredit = csvGLTransactions
+            .filter((t: any) => t.type === 'credit')
+            .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+          
+          const csvTotalDebit = csvGLTransactions
+            .filter((t: any) => t.type === 'debit')
+            .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+          
+          const csvNetBalance = csvTotalCredit - csvTotalDebit;
+          
+          csvContent += `\nSUMMARY\n`;
+          csvContent += `Total Credit,,,${csvTotalCredit},\n`;
+          csvContent += `Total Debit,,,${csvTotalDebit},\n`;
+          csvContent += `Net Balance,,,${csvNetBalance},\n`;
+          csvContent += `Total Transactions,${csvGLTransactions.length},,,\n`;
+          
+          // Add sales metrics
+          const csvTotalRevenue = csvGLSalesData?.dailySales?.reduce((sum: number, day: any) => sum + day.revenue, 0) || 0;
+          const csvTotalOrders = csvGLSalesData?.dailySales?.reduce((sum: number, day: any) => sum + day.orders, 0) || 0;
+          
+          csvContent += `\nSALES PERFORMANCE\n`;
+          csvContent += `Total Revenue,,,${csvTotalRevenue},\n`;
+          csvContent += `Total Orders,${csvTotalOrders},,,\n`;
+          csvContent += `Average Order Value,,,${csvTotalOrders > 0 ? Math.round(csvTotalRevenue / csvTotalOrders) : 0},\n`;
+        }
+        break;
+      case 'profitLoss':
+        // Calculate profit/loss from sales data
+        const csvPLDailySales = reportData?.dailySales || [];
+        const csvPLTotalRevenue = csvPLDailySales.reduce((sum: number, day: any) => sum + (day.revenue || 0), 0);
+        
+        // Estimate expenses
+        const csvPLCOGS = csvPLTotalRevenue * 0.4;
+        const csvPLSalaries = 50000;
+        const csvPLRent = 30000;
+        const csvPLUtilities = 10000;
+        const csvPLMarketing = 5000;
+        const csvPLOther = 5000;
+        const csvPLTotalExpenses = csvPLCOGS + csvPLSalaries + csvPLRent + csvPLUtilities + csvPLMarketing + csvPLOther;
+        const csvPLGrossProfit = csvPLTotalRevenue - csvPLCOGS;
+        const csvPLNetProfit = csvPLTotalRevenue - csvPLTotalExpenses;
+        const csvPLProfitMargin = csvPLTotalRevenue > 0 ? (csvPLNetProfit / csvPLTotalRevenue) * 100 : 0;
+        
+        csvContent = 'PROFIT & LOSS REPORT\n';
+        csvContent += `Date Range,${dateRange === 'week' ? 'This Week' : dateRange === 'month' ? 'This Month' : dateRange === 'quarter' ? 'This Quarter' : 'This Year'}\n`;
+        csvContent += `Generated,${new Date().toLocaleString()}\n`;
+        csvContent += `\n`;
+        
+        csvContent += 'SUMMARY\n';
+        csvContent += `Total Revenue,${csvPLTotalRevenue}\n`;
+        csvContent += `Total Expenses,${csvPLTotalExpenses}\n`;
+        csvContent += `Net Profit,${csvPLNetProfit}\n`;
+        csvContent += `Profit Margin,${csvPLProfitMargin.toFixed(1)}%\n`;
+        csvContent += `\n`;
+        
+        csvContent += 'DETAILED BREAKDOWN\n';
+        csvContent += 'Category,Amount,% of Revenue\n';
+        csvContent += `Revenue,${csvPLTotalRevenue},100%\n`;
+        csvContent += `Cost of Goods Sold,${csvPLCOGS},${csvPLTotalRevenue > 0 ? ((csvPLCOGS / csvPLTotalRevenue) * 100).toFixed(1) : 0}%\n`;
+        csvContent += `Gross Profit,${csvPLGrossProfit},${csvPLTotalRevenue > 0 ? ((csvPLGrossProfit / csvPLTotalRevenue) * 100).toFixed(1) : 0}%\n`;
+        csvContent += `Salaries & Wages,${csvPLSalaries},${csvPLTotalRevenue > 0 ? ((csvPLSalaries / csvPLTotalRevenue) * 100).toFixed(1) : 0}%\n`;
+        csvContent += `Rent & Lease,${csvPLRent},${csvPLTotalRevenue > 0 ? ((csvPLRent / csvPLTotalRevenue) * 100).toFixed(1) : 0}%\n`;
+        csvContent += `Utilities,${csvPLUtilities},${csvPLTotalRevenue > 0 ? ((csvPLUtilities / csvPLTotalRevenue) * 100).toFixed(1) : 0}%\n`;
+        csvContent += `Marketing & Advertising,${csvPLMarketing},${csvPLTotalRevenue > 0 ? ((csvPLMarketing / csvPLTotalRevenue) * 100).toFixed(1) : 0}%\n`;
+        csvContent += `Other Expenses,${csvPLOther},${csvPLTotalRevenue > 0 ? ((csvPLOther / csvPLTotalRevenue) * 100).toFixed(1) : 0}%\n`;
+        csvContent += `Total Expenses,${csvPLTotalExpenses},${csvPLTotalRevenue > 0 ? ((csvPLTotalExpenses / csvPLTotalRevenue) * 100).toFixed(1) : 0}%\n`;
+        csvContent += `Net Profit,${csvPLNetProfit},${csvPLProfitMargin.toFixed(1)}%\n`;
+        break;
+      default:
+        csvContent = 'No data available\n';
+    }
+    }
+
+    // Create and download CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('CSV file downloaded successfully!');
+  };
+
+  const renderSalesReport = useCallback(() => {
+    // Direct data transformation (no hooks inside useCallback)
+    const dailySales = reportData?.dailySales || [];
+    const chartData = dailySales.map(day => ({
+      period: new Date(day.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+      date: day.date,
+      sales: day.revenue,
+      orders: day.orders,
+      customers: Math.round(day.revenue / 500)
+    }));
+    
+    // Direct totals calculation (no hooks inside useCallback)
+    const totalRevenue = dailySales.reduce((sum: number, day: any) => sum + day.revenue, 0);
+    const totalOrders = dailySales.reduce((sum: number, day: any) => sum + day.orders, 0);
+    const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+    
+    return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Sales Trend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dailySales.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="period" />
+                  <YAxis />
+                  <Tooltip formatter={(value: number) => [`Rs ${value.toLocaleString()}`, 'Revenue']} />
+                  <Line type="monotone" dataKey="sales" stroke="#8884d8" strokeWidth={2} name="Revenue" />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                No sales data available for this period
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Orders & Customers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dailySales.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="period" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar key="orders-bar" dataKey="orders" fill="#82ca9d" name="Orders" />
+                  <Bar key="customers-bar" dataKey="customers" fill="#ffc658" name="Customers (Est)" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                No data available for this period
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Sales Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Period</TableHead>
+                <TableHead>Total Sales</TableHead>
+                <TableHead>Orders</TableHead>
+                <TableHead>Customers</TableHead>
+                <TableHead>Avg Order Value</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {dailySales.length > 0 ? (
+                dailySales.map((day: any, index: number) => {
+                  const date = new Date(day.date).toLocaleDateString('en-GB', { 
+                    day: '2-digit', 
+                    month: 'short', 
+                    year: 'numeric' 
+                  });
+                  const customers = Math.round(day.revenue / 500);
+                  const dayAvgOrder = day.orders > 0 ? Math.round(day.revenue / day.orders) : 0;
+                  
+                  return (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{date}</TableCell>
+                      <TableCell>Rs {day.revenue.toLocaleString()}</TableCell>
+                      <TableCell>{day.orders}</TableCell>
+                      <TableCell>{customers}</TableCell>
+                      <TableCell>Rs {dayAvgOrder.toLocaleString()}</TableCell>
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    No sales data available for this period
+                  </TableCell>
+                </TableRow>
+              )}
+              {/* Total Row */}
+              {dailySales.length > 0 && (
+                <TableRow className="bg-muted/50 font-bold">
+                  <TableCell>TOTAL</TableCell>
+                  <TableCell>Rs {totalRevenue.toLocaleString()}</TableCell>
+                  <TableCell>{totalOrders}</TableCell>
+                  <TableCell>{Math.round(totalRevenue / 500)}</TableCell>
+                  <TableCell>Rs {avgOrderValue.toLocaleString()}</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+    );
+  }, [reportData]);
+
+  const renderCustomerReport = useCallback(() => {
+    // Get customer data from API
+    const allCustomers = reportData?.customers || [];
+    const summary = reportData?.summary || {};
+    
+    // Filter customers by search term
+    const customers = customerSearch
+      ? allCustomers.filter((c: any) => 
+          (c.name || '').toLowerCase().includes(customerSearch.toLowerCase()) ||
+          (c.phone || '').includes(customerSearch)
+        )
+      : allCustomers;
+    
+    // Calculate customer segmentation (direct calculation - no hooks inside useCallback)
+    const segments = {
+        VIP: { count: 0, value: 0 },
+        Regular: { count: 0, value: 0 },
+        New: { count: 0, value: 0 }
+      };
+      
+      customers.forEach(customer => {
+        if (customer.totalSpent >= 5000) {
+          segments.VIP.count++;
+          segments.VIP.value += customer.totalSpent;
+        } else if (customer.totalSpent >= 1000) {
+          segments.Regular.count++;
+          segments.Regular.value += customer.totalSpent;
+        } else {
+          segments.New.count++;
+          segments.New.value += customer.totalSpent;
+        }
+      });
+      
+      const totalCustomersCount = customers.length;
+      
+      const customerSegments = [
+        {
+          segment: 'VIP',
+          count: segments.VIP.count,
+          percentage: totalCustomersCount > 0 ? Math.round((segments.VIP.count / totalCustomersCount) * 100) : 0,
+          value: segments.VIP.value
+        },
+        {
+          segment: 'Regular',
+          count: segments.Regular.count,
+          percentage: totalCustomersCount > 0 ? Math.round((segments.Regular.count / totalCustomersCount) * 100) : 0,
+          value: segments.Regular.value
+        },
+        {
+          segment: 'New',
+          count: segments.New.count,
+          percentage: totalCustomersCount > 0 ? Math.round((segments.New.count / totalCustomersCount) * 100) : 0,
+          value: segments.New.value
+        }
+      ];
+    
+    // Get top customers (direct calculation - no hooks inside useCallback)
+    const topCustomers = customers.slice(0, 10).map(customer => ({
+      name: customer.name || 'Walk-in Customer',
+      phone: customer.phone || 'N/A',
+      totalOrders: customer.totalOrders || 0,
+      totalSpent: customer.totalSpent || 0,
+      avgOrderValue: customer.averageOrderValue || 0,
+      lastVisit: customer.lastVisit || customer.firstVisit || new Date().toISOString(),
+      totalVisits: customer.totalVisits || customer.totalOrders || 0
+    }));
+    
+    return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Customer Segments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {customerSegments.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={customerSegments}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ segment, percentage }) => `${segment} ${percentage}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="count"
+                  >
+                    {customerSegments.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={pieChartColors[index % pieChartColors.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                No customer data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Customer Value</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {customerSegments.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={customerSegments}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="segment" />
+                  <YAxis />
+                  <Tooltip formatter={(value: number) => [`Rs ${value.toLocaleString()}`, 'Total Value']} />
+                  <Bar dataKey="value" fill="#8884d8" name="Total Value" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                No customer data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer Analytics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {customerSegments.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Segment</TableHead>
+                  <TableHead>Count</TableHead>
+                  <TableHead>Percentage</TableHead>
+                  <TableHead>Total Value</TableHead>
+                  <TableHead>Avg Value per Customer</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {customerSegments.map((item, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <Badge variant={item.segment === 'VIP' ? 'default' : 'secondary'}>
+                        {item.segment}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{item.count}</TableCell>
+                    <TableCell>{item.percentage}%</TableCell>
+                    <TableCell>Rs {item.value.toLocaleString()}</TableCell>
+                    <TableCell>Rs {item.count > 0 ? Math.round(item.value / item.count).toLocaleString() : 0}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">
+              No customer data available
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Top Customers Table */}
+      {topCustomers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Top Customers</CardTitle>
+              {customerSearch && (
+                <Badge variant="outline" className="text-sm">
+                  {topCustomers.length} customer(s) found
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer Name</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead className="text-center">Store Visits</TableHead>
+                  <TableHead>Total Orders</TableHead>
+                  <TableHead>Total Spent</TableHead>
+                  <TableHead>Avg Order Value</TableHead>
+                  <TableHead>Last Visit</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {topCustomers.map((customer, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{customer.name}</TableCell>
+                    <TableCell>{customer.phone}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">
+                        {customer.totalVisits || customer.totalOrders || 0} times
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{customer.totalOrders}</TableCell>
+                    <TableCell className="text-green-600 font-semibold">
+                      Rs {customer.totalSpent.toLocaleString()}
+                    </TableCell>
+                    <TableCell>Rs {Math.round(customer.avgOrderValue).toLocaleString()}</TableCell>
+                    <TableCell>{new Date(customer.lastVisit).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+    );
+  }, [reportData, customerSearch]);
+
+  const renderSupplierReport = useCallback(() => {
+    // Get supplier data from API response
+    const allSuppliers = reportData?.data?.suppliers || reportData?.suppliers || [];
+    const summary = reportData?.data?.summary || reportData?.summary || {};
+    
+    // Filter suppliers by search term
+    const suppliers = supplierSearch
+      ? allSuppliers.filter((s: any) => 
+          (s.name || '').toLowerCase().includes(supplierSearch.toLowerCase()) ||
+          (s.contact || '').toLowerCase().includes(supplierSearch.toLowerCase())
+        )
+      : allSuppliers;
+    
+    // Calculate summary statistics
+    const totalSuppliers = suppliers.length;
+    const totalPurchases = suppliers.reduce((sum: number, s: any) => sum + (s.totalPurchases || 0), 0);
+    const totalOutstanding = suppliers.reduce((sum: number, s: any) => sum + (s.outstanding || 0), 0);
+    const activeSuppliers = suppliers.filter((s: any) => s.status === 'active' || s.status === 'Active').length;
+    const avgPaymentRatio = totalPurchases > 0 ? Math.round(((totalPurchases - totalOutstanding) / totalPurchases) * 100) : 0;
+    
+    return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm">Total Suppliers</CardTitle>
+            <Truck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalSuppliers}</div>
+            <p className="text-xs text-muted-foreground">{activeSuppliers} active</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm">Total Purchases</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Rs {totalPurchases.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">All time</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm">Outstanding Balance</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${totalOutstanding > 30000 ? 'text-red-600' : 'text-green-600'}`}>
+              Rs {totalOutstanding.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">Pending payments</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm">Avg Payment Ratio</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{avgPaymentRatio}%</div>
+            <p className="text-xs text-muted-foreground">Paid vs Total</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Supplier Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Supplier Performance</CardTitle>
+            {supplierSearch && (
+              <Badge variant="outline" className="text-sm">
+                {suppliers.length} supplier(s) found
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {suppliers.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Supplier Name</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Total Purchases</TableHead>
+                  <TableHead>Outstanding Balance</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Payment Ratio</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {suppliers.map((supplier: any) => {
+                  const supplierPurchases = supplier.totalPurchases || 0;
+                  const supplierOutstanding = supplier.outstanding || 0;
+                  const paymentRatio = supplierPurchases > 0 
+                    ? Math.round(((supplierPurchases - supplierOutstanding) / supplierPurchases) * 100) 
+                    : 0;
+                  
+                  return (
+                    <TableRow key={supplier.id}>
+                      <TableCell className="font-medium">{supplier.name}</TableCell>
+                      <TableCell>{supplier.contact || 'N/A'}</TableCell>
+                      <TableCell>Rs {supplierPurchases.toLocaleString()}</TableCell>
+                      <TableCell className={supplierOutstanding > 30000 ? 'text-red-600 font-semibold' : 'text-green-600'}>
+                        Rs {supplierOutstanding.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={supplier.status === 'active' || supplier.status === 'Active' ? 'default' : 'secondary'}>
+                          {supplier.status || 'Active'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={paymentRatio >= 80 ? 'default' : 'secondary'}>
+                          {paymentRatio}%
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">
+              {supplierSearch ? 'No suppliers match your search' : 'No suppliers found'}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+    );
+  }, [reportData, supplierSearch]);
+
+  const renderEmployeeReport = useCallback(() => {
+    // Get employee data from API response
+    const allEmployees = reportData?.data?.employees || reportData?.employees || [];
+    const summary = reportData?.data?.summary || reportData?.summary || {};
+    
+    // Calculate summary statistics
+    const totalEmployees = allEmployees.length;
+    const totalSales = allEmployees.reduce((sum: number, e: any) => sum + (e.totalSales || 0), 0);
+    const totalOrders = allEmployees.reduce((sum: number, e: any) => sum + (e.totalOrders || 0), 0);
+    const avgPerformance = totalEmployees > 0 ? Math.round(totalSales / totalEmployees) : 0;
+    
+    return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Employees</p>
+                <p className="text-2xl font-bold">{totalEmployees}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Sales</p>
+                <p className="text-2xl font-bold">Rs {totalSales.toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Orders</p>
+                <p className="text-2xl font-bold">{totalOrders}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Avg Performance</p>
+                <p className="text-2xl font-bold">Rs {avgPerformance.toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Employee Performance Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Employee Performance Details</CardTitle>
+          <CardDescription>Sales performance and productivity metrics for each employee</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {allEmployees.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Users className="w-16 h-16 mx-auto mb-4 opacity-20" />
+              <p className="text-lg font-semibold mb-2">No employee data available</p>
+              <p className="text-sm">Employee performance metrics will appear here once orders are created</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead className="text-right">Total Orders</TableHead>
+                    <TableHead className="text-right">Total Sales</TableHead>
+                    <TableHead className="text-right">Avg Order Value</TableHead>
+                    <TableHead className="text-right">Profit</TableHead>
+                    <TableHead className="text-right">Margin</TableHead>
+                    <TableHead className="text-center">Performance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allEmployees.map((employee: any) => {
+                    const performanceLevel = employee.profitMargin >= 40 ? 'Excellent' :
+                                          employee.profitMargin >= 25 ? 'Good' :
+                                          employee.profitMargin >= 15 ? 'Average' : 'Needs Improvement';
+                    const performanceColor = employee.profitMargin >= 40 ? 'default' :
+                                          employee.profitMargin >= 25 ? 'secondary' :
+                                          employee.profitMargin >= 15 ? 'outline' : 'destructive';
+                    
+                    return (
+                      <TableRow key={employee.id}>
+                        <TableCell className="font-medium">{employee.name}</TableCell>
+                        <TableCell>{employee.email || 'N/A'}</TableCell>
+                        <TableCell>{employee.phone}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{employee.role}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{employee.totalOrders}</TableCell>
+                        <TableCell className="text-right font-semibold">Rs {employee.totalSales.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">Rs {employee.avgOrderValue.toLocaleString()}</TableCell>
+                        <TableCell className="text-right font-semibold text-green-600">Rs {employee.totalProfit.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant={employee.profitMargin >= 30 ? 'default' : 'secondary'}>
+                            {employee.profitMargin}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={performanceColor}>{performanceLevel}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+    );
+  }, [reportData]);
+
+  const renderCreditDebitReport = useCallback(() => {
+    // Get transaction data from API response
+    console.log('🔍 renderCreditDebitReport - reportData:', reportData);
+    const transactions = reportData?.transactions || [];
+    const summary = reportData?.summary || {};
+    console.log('📋 Transactions array:', transactions);
+    console.log('📊 Summary:', summary);
+    
+    // Calculate summary statistics
+    const totalCredit = transactions
+      .filter((t: any) => t.type === 'credit')
+      .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+    
+    const totalDebit = transactions
+      .filter((t: any) => t.type === 'debit')
+      .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+    
+    const netBalance = totalCredit - totalDebit;
+    
+    return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Credit</p>
+                <p className="text-2xl font-bold">Rs {Math.round(totalCredit).toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-red-600 rotate-180" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Debit</p>
+                <p className="text-2xl font-bold">Rs {Math.round(totalDebit).toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Net Balance</p>
+                <p className="text-2xl font-bold">Rs {Math.round(netBalance).toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <FileText className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Transactions</p>
+                <p className="text-2xl font-bold">{transactions.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Transactions Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Credit/Debit Transactions</CardTitle>
+          <CardDescription>All financial transactions with suppliers</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {transactions.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <FileText className="w-16 h-16 mx-auto mb-4 opacity-20" />
+              <p className="text-lg font-semibold mb-2">No transactions found</p>
+              <p className="text-sm">Credit and debit transactions will appear here</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Supplier</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Description</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((transaction: any) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell>{new Date(transaction.transaction_date || transaction.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</TableCell>
+                      <TableCell className="font-medium">{transaction.supplier?.name || transaction.supplier_name || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Badge variant={transaction.type === 'credit' ? 'default' : 'secondary'}>
+                          {transaction.type === 'credit' ? 'Credit' : 'Debit'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        <span className={transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}>
+                          Rs {parseFloat(transaction.amount || 0).toLocaleString()}
+                        </span>
+                      </TableCell>
+                      <TableCell>{transaction.description || 'N/A'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+    );
+  }, [reportData]);
+
+  const renderGeneralLedgerReport = useCallback(() => {
+    // Get ledger data from API response
+    const transactions = reportData?.ledger || [];
+    const summary = reportData?.summary || {};
+    const salesData = reportData?.sales || {};
+    
+    console.log('🔍 renderGeneralLedgerReport - Data:', {
+      transactions: transactions.length,
+      summary,
+      salesData
+    });
+    
+    // Calculate summary statistics
+    const totalCredit = transactions
+      .filter((t: any) => t.type === 'credit')
+      .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+    
+    const totalDebit = transactions
+      .filter((t: any) => t.type === 'debit')
+      .reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+    
+    const netBalance = totalCredit - totalDebit;
+    
+    // Calculate sales metrics
+    const totalRevenue = salesData?.dailySales?.reduce((sum: number, day: any) => sum + day.revenue, 0) || 0;
+    const totalOrders = salesData?.dailySales?.reduce((sum: number, day: any) => sum + day.orders, 0) || 0;
+    
+    return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Credit</p>
+                <p className="text-2xl font-bold">Rs {Math.round(totalCredit).toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-red-600 rotate-180" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Debit</p>
+                <p className="text-2xl font-bold">Rs {Math.round(totalDebit).toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Net Balance</p>
+                <p className="text-2xl font-bold">Rs {Math.round(netBalance).toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <FileText className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Transactions</p>
+                <p className="text-2xl font-bold">{transactions.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Sales Summary Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Sales Summary</CardTitle>
+          <CardDescription>Revenue and order statistics for the period</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-600 mb-1">Total Revenue</p>
+              <p className="text-3xl font-bold text-blue-900">Rs {Math.round(totalRevenue).toLocaleString()}</p>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+              <p className="text-sm text-green-600 mb-1">Total Orders</p>
+              <p className="text-3xl font-bold text-green-900">{totalOrders}</p>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+              <p className="text-sm text-purple-600 mb-1">Average Order Value</p>
+              <p className="text-3xl font-bold text-purple-900">Rs {totalOrders > 0 ? Math.round(totalRevenue / totalOrders).toLocaleString() : 0}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Transactions Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>General Ledger Transactions</CardTitle>
+          <CardDescription>All financial transactions with detailed breakdown</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {transactions.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <FileText className="w-16 h-16 mx-auto mb-4 opacity-20" />
+              <p className="text-lg font-semibold mb-2">No transactions found</p>
+              <p className="text-sm">General ledger transactions will appear here</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Supplier</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Description</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((transaction: any) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell>{new Date(transaction.transaction_date || transaction.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</TableCell>
+                      <TableCell className="font-medium">{transaction.supplier?.name || transaction.supplier_name || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Badge variant={transaction.type === 'credit' ? 'default' : 'secondary'}>
+                          {transaction.type === 'credit' ? 'Credit' : 'Debit'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        <span className={transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}>
+                          Rs {parseFloat(transaction.amount || 0).toLocaleString()}
+                        </span>
+                      </TableCell>
+                      <TableCell>{transaction.description || 'N/A'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+    );
+  }, [reportData]);
+
+  const renderProfitLossReport = useCallback(() => {
+    // Calculate profit/loss from sales data
+    const dailySales = reportData?.dailySales || [];
+    
+    console.log('🔍 renderProfitLossReport - Data:', {
+      dailySalesCount: dailySales.length,
+      firstDay: dailySales[0]
+    });
+    
+    // Calculate total revenue
+    const totalRevenue = dailySales.reduce((sum: number, day: any) => sum + (day.revenue || 0), 0);
+    const totalOrders = dailySales.reduce((sum: number, day: any) => sum + (day.orders || 0), 0);
+    
+    // Estimate expenses (since we don't have actual expense tracking yet)
+    // In a real system, these would come from an expenses table
+    const costOfGoodsSold = totalRevenue * 0.4; // 40% of revenue (typical retail)
+    const salaries = 50000; // Fixed monthly salary estimate
+    const rent = 30000; // Fixed rent estimate
+    const utilities = 10000; // Utilities estimate
+    const marketing = 5000; // Marketing estimate
+    const other = 5000; // Other expenses
+    
+    const totalExpenses = costOfGoodsSold + salaries + rent + utilities + marketing + other;
+    const grossProfit = totalRevenue - costOfGoodsSold;
+    const netProfit = totalRevenue - totalExpenses;
+    const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+    
+    return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Revenue</p>
+                <p className="text-2xl font-bold">Rs {Math.round(totalRevenue).toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Expenses</p>
+                <p className="text-2xl font-bold">Rs {Math.round(totalExpenses).toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Net Profit</p>
+                <p className="text-2xl font-bold" style={{ color: netProfit >= 0 ? '#388e3c' : '#d32f2f' }}>
+                  Rs {Math.round(netProfit).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Profit Margin</p>
+                <p className="text-2xl font-bold">{profitMargin.toFixed(1)}%</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Detailed Breakdown */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Profit & Loss Breakdown</CardTitle>
+          <CardDescription>Detailed revenue and expense analysis</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="text-right">% of Revenue</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow className="bg-green-50">
+                <TableCell className="font-bold">Revenue</TableCell>
+                <TableCell className="text-right font-bold text-green-600">Rs {Math.round(totalRevenue).toLocaleString()}</TableCell>
+                <TableCell className="text-right">100%</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="pl-8">Cost of Goods Sold</TableCell>
+                <TableCell className="text-right text-red-600">- Rs {Math.round(costOfGoodsSold).toLocaleString()}</TableCell>
+                <TableCell className="text-right">{(totalRevenue > 0 ? (costOfGoodsSold / totalRevenue) * 100 : 0).toFixed(1)}%</TableCell>
+              </TableRow>
+              <TableRow className="bg-blue-50">
+                <TableCell className="font-semibold">Gross Profit</TableCell>
+                <TableCell className="text-right font-semibold text-blue-600">Rs {Math.round(grossProfit).toLocaleString()}</TableCell>
+                <TableCell className="text-right">{(totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0).toFixed(1)}%</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="pl-8">Salaries & Wages</TableCell>
+                <TableCell className="text-right text-red-600">- Rs {Math.round(salaries).toLocaleString()}</TableCell>
+                <TableCell className="text-right">{(totalRevenue > 0 ? (salaries / totalRevenue) * 100 : 0).toFixed(1)}%</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="pl-8">Rent & Lease</TableCell>
+                <TableCell className="text-right text-red-600">- Rs {Math.round(rent).toLocaleString()}</TableCell>
+                <TableCell className="text-right">{(totalRevenue > 0 ? (rent / totalRevenue) * 100 : 0).toFixed(1)}%</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="pl-8">Utilities</TableCell>
+                <TableCell className="text-right text-red-600">- Rs {Math.round(utilities).toLocaleString()}</TableCell>
+                <TableCell className="text-right">{(totalRevenue > 0 ? (utilities / totalRevenue) * 100 : 0).toFixed(1)}%</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="pl-8">Marketing & Advertising</TableCell>
+                <TableCell className="text-right text-red-600">- Rs {Math.round(marketing).toLocaleString()}</TableCell>
+                <TableCell className="text-right">{(totalRevenue > 0 ? (marketing / totalRevenue) * 100 : 0).toFixed(1)}%</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="pl-8">Other Expenses</TableCell>
+                <TableCell className="text-right text-red-600">- Rs {Math.round(other).toLocaleString()}</TableCell>
+                <TableCell className="text-right">{(totalRevenue > 0 ? (other / totalRevenue) * 100 : 0).toFixed(1)}%</TableCell>
+              </TableRow>
+              <TableRow className="bg-gray-100">
+                <TableCell className="font-semibold">Total Expenses</TableCell>
+                <TableCell className="text-right font-semibold text-red-600">- Rs {Math.round(totalExpenses).toLocaleString()}</TableCell>
+                <TableCell className="text-right">{(totalRevenue > 0 ? (totalExpenses / totalRevenue) * 100 : 0).toFixed(1)}%</TableCell>
+              </TableRow>
+              <TableRow className="bg-green-100 border-t-2">
+                <TableCell className="font-bold text-lg">Net Profit</TableCell>
+                <TableCell className="text-right font-bold text-lg" style={{ color: netProfit >= 0 ? '#388e3c' : '#d32f2f' }}>
+                  Rs {Math.round(netProfit).toLocaleString()}
+                </TableCell>
+                <TableCell className="text-right font-bold">{profitMargin.toFixed(1)}%</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+    );
+  }, [reportData]);
+
+  const reportComponents = useMemo(() => ({
+    sales: renderSalesReport,
+    customer: renderCustomerReport,
+    supplier: renderSupplierReport,
+    employee: renderEmployeeReport,
+    creditDebit: renderCreditDebitReport,
+    generalLedger: renderGeneralLedgerReport,
+    profitLoss: renderProfitLossReport,
+  }), [renderSalesReport, renderCustomerReport, renderSupplierReport, renderEmployeeReport, renderCreditDebitReport, renderGeneralLedgerReport, renderProfitLossReport]);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2>Reports & Analytics</h2>
+          <p className="text-muted-foreground">Generate and view detailed business reports</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={downloadPDF}>
+            <Download className="w-4 h-4 mr-2" />
+            Download PDF
+          </Button>
+          <Button variant="outline" onClick={downloadCSV}>
+            <FileDown className="w-4 h-4 mr-2" />
+            Download CSV
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <Select value={reportType} onValueChange={setReportType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select report type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sales">Sales Report</SelectItem>
+                  <SelectItem value="customer">Customer Report</SelectItem>
+                  <SelectItem value="supplier">Supplier Report</SelectItem>
+                  <SelectItem value="employee">Employee Report</SelectItem>
+                  <SelectItem value="creditDebit">Credit/Debit Report</SelectItem>
+                  <SelectItem value="generalLedger">General Ledger Report</SelectItem>
+                  <SelectItem value="profitLoss">Profit & Loss Report</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <Select value={dateRange} onValueChange={setDateRange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select date range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="quarter">This Quarter</SelectItem>
+                  <SelectItem value="year">This Year</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Customer Name Search - Only visible for Customer Report */}
+            {reportType === 'customer' && (
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="Search customer by name..."
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
+                />
+              </div>
+            )}
+            {/* Supplier Name Search - Only visible for Supplier Report */}
+            {reportType === 'supplier' && (
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="Search supplier by name..."
+                  value={supplierSearch}
+                  onChange={(e) => setSupplierSearch(e.target.value)}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
+                />
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Rs {summaryStatsState.totalRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              {summaryStatsState.revenueChange !== 0 ? 
+                `${summaryStatsState.revenueChange > 0 ? '+' : ''}${summaryStatsState.revenueChange}% from last period` : 
+                'No previous data'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm">Total Orders</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{summaryStatsState.totalOrders.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              {summaryStatsState.ordersChange !== 0 ? 
+                `${summaryStatsState.ordersChange > 0 ? '+' : ''}${summaryStatsState.ordersChange}% from last period` : 
+                'No previous data'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm">Active Customers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{summaryStatsState.activeCustomers}</div>
+            <p className="text-xs text-muted-foreground">
+              {summaryStatsState.customersChange > 0 ? 
+                `+${summaryStatsState.customersChange}% from last period` : 
+                'No change'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm">Active Suppliers</CardTitle>
+            <Truck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{summaryStatsState.activeSuppliers}</div>
+            <p className="text-xs text-muted-foreground">No change</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Report Content */}
+      {loading ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading report data...</p>
+          </CardContent>
+        </Card>
+      ) : (
+        reportComponents[reportType as keyof typeof reportComponents]()
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,192 @@
+=================================================================
+   POS SYSTEM - DEPLOYMENT GUIDE
+=================================================================
+
+FOLDER CONTENTS:
+───────────────────────────────────────────────────────────────
+📁 POS-Production-Build/
+ ├── 🚀 00-Complete-Setup.bat         (One-click full deployment)
+ ├── 📦 01-Install-Dependencies.bat   (Install packages)
+ ├── 🗄️  02-Setup-Database.bat         (Database setup)
+ ├── ▶️  03-Start-Servers.bat          (Start application)
+ ├── 📋 README.md                      (Detailed documentation)
+ ├── 🗃️  database-schema.sql           (Complete SQL schema)
+ ├── ⚙️  setup-database.js             (Setup automation script)
+ ├── 🔧 .env.example                   (Environment template)
+ ├── 📄 package.json                   (Frontend dependencies)
+ ├── 📄 vite.config.ts                 (Vite configuration)
+ ├── 📄 index.html                     (Entry HTML)
+ └── 📁 src/                           (Complete source code)
+      ├── backend/                     (Node.js/Express API)
+      ├── components/                  (React components)
+      ├── services/                    (API service layer)
+      └── ...                          (All other source files)
+
+=================================================================
+   SYSTEM REQUIREMENTS
+=================================================================
+
+Before deployment, ensure the following are installed:
+
+✅ Node.js v18+     Download: https://nodejs.org/
+✅ PostgreSQL v17+  Download: https://www.postgresql.org/download/
+✅ Windows 10/11    Or Windows Server 2019+
+
+=================================================================
+   DEPLOYMENT STEPS (3 EASY STEPS)
+=================================================================
+
+OPTION A: ONE-CLICK DEPLOYMENT (RECOMMENDED)
+─────────────────────────────────────────────
+1. Double-click: 00-Complete-Setup.bat
+2. Wait for completion (5-10 minutes)
+3. Open browser: http://localhost:5173
+
+OPTION B: STEP-BY-STEP DEPLOYMENT
+─────────────────────────────────
+Step 1: Install Dependencies
+   • Double-click: 01-Install-Dependencies.bat
+   • Wait for npm install to complete
+   • This installs all backend and frontend packages
+
+Step 2: Setup Database
+   • Double-click: 02-Setup-Database.bat
+   • Creates 'pos' database in PostgreSQL
+   • Sets up 12 tables with indexes
+   • Creates default users and settings
+
+Step 3: Start Servers
+   • Double-click: 03-Start-Servers.bat
+   • Opens 2 terminal windows (Backend + Frontend)
+   • Wait for both to show "ready" message
+   • Open browser: http://localhost:5173
+
+=================================================================
+   DEFAULT LOGIN CREDENTIALS
+=================================================================
+
+👑 SUPER ADMIN (Full Access):
+   Email:    factsolution@gmail.com
+   Password: Black@786##
+
+👤 ADMIN USER (Standard Access):
+   Email:    admin@factssolution.com
+   Password: Test@123
+
+=================================================================
+   WHAT GETS INSTALLED
+=================================================================
+
+DATABASE (12 Tables):
+✅ users              - System users with roles
+✅ products           - Product inventory
+✅ categories         - Product categories
+✅ suppliers          - Supplier information
+✅ orders             - Customer orders
+✅ order_items        - Order line items
+✅ transactions       - Financial transactions
+✅ expenses           - Business expenses
+✅ employees          - Employee records
+✅ settings           - System configuration
+✅ licenses           - License management
+✅ audit_logs         - Activity logging
+
+DEFAULT SETTINGS:
+✅ Trial Period: 45 days
+✅ Monthly License: Rs 5,000
+✅ Yearly License: Rs 50,000
+✅ Lifetime License: Rs 150,000
+✅ Currency: PKR
+✅ Tax Rate: 0%
+
+DEFAULT USERS:
+✅ Super Admin (factsolution@gmail.com)
+✅ Admin (admin@factssolution.com)
+
+=================================================================
+   PORTS USED
+=================================================================
+
+Backend:  Port 5000  (API Server)
+Frontend: Port 5173  (Web Interface)
+Database: Port 5432  (PostgreSQL)
+
+=================================================================
+   TROUBLESHOOTING
+=================================================================
+
+Problem: PostgreSQL Connection Failed
+Solution:
+   1. Check if PostgreSQL service is running
+   2. Verify password is: Black@786##
+   3. Ensure PostgreSQL is in system PATH
+
+Problem: Port Already in Use
+Solution:
+   • Run 03-Start-Servers.bat again (kills existing processes)
+   • Or manually close Node.exe in Task Manager
+
+Problem: Dependencies Not Installing
+Solution:
+   1. Check internet connection
+   2. Run as Administrator
+   3. Clear npm cache: npm cache clean --force
+
+Problem: Database Setup Fails
+Solution:
+   1. Ensure PostgreSQL is running
+   2. Check admin privileges
+   3. Verify password matches configuration
+
+=================================================================
+   SECURITY NOTES
+=================================================================
+
+⚠️  BEFORE PRODUCTION DEPLOYMENT:
+
+1. Change JWT_SECRET in src/backend/.env
+2. Change default passwords
+3. Update .env.example values
+4. Enable HTTPS for production
+5. Setup proper firewall rules
+6. Configure backup schedule
+
+=================================================================
+   SUPPORT
+=================================================================
+
+For issues:
+   1. Check console logs in terminal windows
+   2. Check browser console (F12) for errors
+   3. Review README.md for detailed docs
+   4. Verify all requirements are met
+
+=================================================================
+   SYSTEM FEATURES
+=================================================================
+
+✅ Point of Sale (POS) System
+✅ Token-based Order Management
+✅ Product Inventory Management
+✅ Supplier Management
+✅ Employee Management
+✅ Expense Tracking
+✅ Credit/Debit Management
+✅ Comprehensive Reporting
+✅ License Management System
+✅ Role-based Access Control
+✅ Audit Logging
+✅ Automatic Backups
+✅ Thermal Receipt Printing
+✅ Dashboard Analytics
+
+=================================================================
+   VERSION INFO
+=================================================================
+
+Version: 1.0.0
+Build Date: May 2026
+Status: Production Ready ✅
+License: Commercial (Built-in licensing system)
+
+=================================================================
