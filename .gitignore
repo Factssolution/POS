@@ -41,3 +41,6 @@ coverage/
 # Node modules (both root and backend)
 node_modules
 src/backend/node_modules
+
+# Backend environment file (contains secrets)
+src/backend/.env
