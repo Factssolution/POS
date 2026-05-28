@@ -9,7 +9,10 @@ console.log('🔧 Database initialization started');
 
 let sequelize;
 
-if (process.env.DB_URL) {
+// Use individual variables if DB_HOST is set and not a pooler connection
+const useIndividualVars = process.env.DB_HOST && !process.env.DB_HOST.includes('pooler');
+
+if (process.env.DB_URL && !useIndividualVars) {
   console.log('✅ Using DB_URL connection string');
   sequelize = new Sequelize(process.env.DB_URL, {
     dialect: 'postgres',
