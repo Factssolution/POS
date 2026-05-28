@@ -119,15 +119,7 @@ const { initializeScheduledBackups } = require('./controllers/scheduledBackup');
 
 const startServer = async () => {
   try {
-    // Test database connection
-    await sequelize.authenticate();
-    console.log('✅ Database connected successfully');
-    
-    // Sync database (create tables if not exist)
-    await sequelize.sync({ alter: false });
-    console.log('✅ Database synced');
-    
-    // Start server
+    // Start server first (before database connection)
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📍 API URL: http://localhost:${PORT}/api/v1`);
@@ -136,6 +128,19 @@ const startServer = async () => {
       // Initialize scheduled backups
       initializeScheduledBackups();
     });
+
+    // Test database connection (non-blocking)
+    try {
+      await sequelize.authenticate();
+      console.log('✅ Database connected successfully');
+      
+      // Sync database (create tables if not exist)
+      await sequelize.sync({ alter: false });
+      console.log('✅ Database synced');
+    } catch (dbError) {
+      console.error('⚠️  Database connection failed:', dbError.message);
+      console.log('⚠️  Server will continue running but database operations will fail');
+    }
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
