@@ -5,6 +5,8 @@ dns.setDefaultResultOrder('ipv4first');
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
+console.log('🔧 Database initialization started');
+
 let sequelize;
 
 if (process.env.DB_URL) {
