@@ -40,7 +40,11 @@ if (process.env.DB_URL && !useIndividualVars) {
   
   const sslConfig = process.env.DB_SSL === 'false' 
     ? false 
-    : { require: true, rejectUnauthorized: false };
+    : { 
+        require: true, 
+        rejectUnauthorized: false,
+        servername: process.env.DB_HOST // Required for Supabase pooler SNI
+      };
   
   sequelize = new Sequelize(
     process.env.DB_NAME || 'pos',
