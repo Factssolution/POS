@@ -56,6 +56,19 @@ if (process.env.DB_URL) {
       }
     }
   );
+} else {
+  // Fallback: use default values
+  console.log('️  No DB configuration found, using defaults');
+  sequelize = new Sequelize('pos', 'postgres', '', {
+    host: 'localhost',
+    port: 5432,
+    dialect: 'postgres',
+    logging: false
+  });
+}
+
+if (!sequelize) {
+  throw new Error('Failed to initialize Sequelize');
 }
 
 module.exports = sequelize;
