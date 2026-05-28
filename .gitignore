@@ -44,3 +44,4 @@ src/backend/node_modules
 
 # Backend environment file (contains secrets)
 src/backend/.env
+.vercel
