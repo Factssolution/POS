@@ -5,12 +5,8 @@ require('dotenv').config();
 let sequelize;
 
 if (process.env.DB_URL) {
-  // Force IPv4 and SSL
-  const url = process.env.DB_URL.includes('?') 
-    ? process.env.DB_URL + '&options=-c%20statement_timeout=30000'
-    : process.env.DB_URL + '?options=-c%20statement_timeout=30000';
-  
-  sequelize = new Sequelize(url, {
+  // Force SSL
+  sequelize = new Sequelize(process.env.DB_URL, {
     dialect: 'postgres',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     dialectOptions: {
@@ -31,7 +27,7 @@ if (process.env.DB_URL) {
       freezeTableName: true
     }
   });
-} else {
+} else if (process.env.DB_HOST) {
   sequelize = new Sequelize(
     process.env.DB_NAME || 'pos',
     process.env.DB_USER || 'postgres',
