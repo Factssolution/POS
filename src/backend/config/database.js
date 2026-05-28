@@ -42,8 +42,7 @@ if (process.env.DB_URL && !useIndividualVars) {
     ? false 
     : { 
         require: true, 
-        rejectUnauthorized: false,
-        servername: process.env.DB_HOST // Required for Supabase pooler SNI
+        rejectUnauthorized: false
       };
   
   sequelize = new Sequelize(
@@ -55,7 +54,10 @@ if (process.env.DB_URL && !useIndividualVars) {
       port: parseInt(process.env.DB_PORT) || 5432,
       dialect: 'postgres',
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
-      dialectOptions: sslConfig ? { ssl: sslConfig } : {},
+      dialectOptions: {
+        ssl: sslConfig,
+        servername: process.env.DB_HOST // SNI for Supabase pooler
+      },
       pool: {
         max: 5,
         min: 0,
