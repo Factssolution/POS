@@ -34,6 +34,11 @@ if (process.env.DB_URL) {
   });
 } else if (process.env.DB_HOST) {
   console.log(`✅ Using individual DB variables: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
+  
+  const sslConfig = process.env.DB_SSL === 'false' 
+    ? false 
+    : { require: true, rejectUnauthorized: false };
+  
   sequelize = new Sequelize(
     process.env.DB_NAME || 'pos',
     process.env.DB_USER || 'postgres',
@@ -43,12 +48,7 @@ if (process.env.DB_URL) {
       port: parseInt(process.env.DB_PORT) || 5432,
       dialect: 'postgres',
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
-      dialectOptions: {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false
-        }
-      },
+      dialectOptions: sslConfig ? { ssl: sslConfig } : {},
       pool: {
         max: 5,
         min: 0,
