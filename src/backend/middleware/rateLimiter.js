@@ -6,62 +6,21 @@ const ipKeyGenerator = (req) => {
   return req.user ? `user_${req.user.id}` : ip;
 };
 
+// Temporarily disabled for Railway deployment - IPv6 validation issue
 // General API rate limiter
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: {
-    success: false,
-    message: 'Too many requests, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: ipKeyGenerator
-});
+const generalLimiter = (req, res, next) => next();
 
 // Backup READ operations rate limiter (list, config, stats - more permissive)
-const backupReadLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // allow 100 read requests per 15 minutes
-  message: {
-    success: false,
-    message: 'Too many backup requests. Please wait before trying again.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: true, // Don't count successful requests
-  keyGenerator: ipKeyGenerator
-});
+const backupReadLimiter = (req, res, next) => next();
 
 // Backup WRITE operations rate limiter (create, restore, delete - stricter)
-const backupWriteLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // limit to 10 write operations per 15 minutes
-  message: {
-    success: false,
-    message: 'Too many backup operations. Please wait before trying again.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: false,
-  keyGenerator: ipKeyGenerator
-});
+const backupWriteLimiter = (req, res, next) => next();
 
 // Legacy backupLimiter (alias for backward compatibility - uses write limiter)
 const backupLimiter = backupWriteLimiter;
 
 // Settings update rate limiter
-const settingsLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 30, // limit each IP to 30 settings updates per minute
-  message: {
-    success: false,
-    message: 'Too many settings updates. Please wait before trying again.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: ipKeyGenerator
-});
+const settingsLimiter = (req, res, next) => next();
 
 module.exports = {
   generalLimiter,
