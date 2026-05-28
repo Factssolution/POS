@@ -9,8 +9,8 @@ console.log('🔧 Database initialization started');
 
 let sequelize;
 
-// Use individual variables if DB_HOST is set and not a pooler connection
-const useIndividualVars = process.env.DB_HOST && !process.env.DB_HOST.includes('pooler');
+// Always prefer individual variables over DB_URL when DB_HOST is set
+const useIndividualVars = process.env.DB_HOST && process.env.DB_USER;
 
 if (process.env.DB_URL && !useIndividualVars) {
   console.log('✅ Using DB_URL connection string');
