@@ -1,11 +1,14 @@
+// Force IPv4 DNS resolution
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-// Use DB_URL if available (Supabase connection string), otherwise use individual variables
 let sequelize;
 
 if (process.env.DB_URL) {
-  // Force SSL
+  console.log('✅ Using DB_URL connection string');
   sequelize = new Sequelize(process.env.DB_URL, {
     dialect: 'postgres',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
@@ -28,13 +31,14 @@ if (process.env.DB_URL) {
     }
   });
 } else if (process.env.DB_HOST) {
+  console.log(`✅ Using individual DB variables: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
   sequelize = new Sequelize(
     process.env.DB_NAME || 'pos',
     process.env.DB_USER || 'postgres',
     process.env.DB_PASSWORD || '',
     {
       host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 5432,
+      port: parseInt(process.env.DB_PORT) || 5432,
       dialect: 'postgres',
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
       dialectOptions: {
@@ -57,8 +61,7 @@ if (process.env.DB_URL) {
     }
   );
 } else {
-  // Fallback: use default values
-  console.log('️  No DB configuration found, using defaults');
+  console.log('⚠️  No DB configuration found, using defaults');
   sequelize = new Sequelize('pos', 'postgres', '', {
     host: 'localhost',
     port: 5432,
