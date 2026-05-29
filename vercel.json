@@ -20,5 +20,12 @@
         }
       ]
     }
-  ]
+  ],
+  "experimentalServices": {
+    "web": {
+      "routePrefix": "/",
+      "framework": "vite",
+      "buildCommand": "cd src/backend && npm install --production"
+    }
+  }
 }

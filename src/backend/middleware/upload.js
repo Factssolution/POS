@@ -2,18 +2,25 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Create uploads directories if they don't exist
+// Create uploads directories if they don't exist (skip on Vercel/serverless)
 const uploadDirs = [
   './uploads/products',
   './uploads/logos',
   './uploads/temp'
 ];
 
-uploadDirs.forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
+// Skip directory creation on Vercel (read-only filesystem)
+if (process.env.VERCEL !== '1') {
+  uploadDirs.forEach(dir => {
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    } catch (err) {
+      console.log('⚠️  Could not create upload directory:', dir);
+    }
+  });
+}
 
 // Configure storage for products
 const productStorage = multer.diskStorage({
