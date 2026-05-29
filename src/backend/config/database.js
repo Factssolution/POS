@@ -1,6 +1,6 @@
-// Force IPv4 DNS resolution
-const dns = require('dns');
-dns.setDefaultResultOrder('ipv4first');
+// Force IPv4 DNS resolution (commented out for Vercel compatibility)
+// const dns = require('dns');
+// dns.setDefaultResultOrder('ipv4first');
 
 const { Sequelize } = require('sequelize');
 
