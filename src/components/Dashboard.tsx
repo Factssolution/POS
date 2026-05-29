@@ -30,10 +30,10 @@ export default function Dashboard() {
       const { startDate, endDate } = getTimeRange();
       console.log('⏰ Time Range:', { startDate, endDate, timeFrame });
         
-      // Fetch orders directly from Supabase
+      // Fetch orders directly from Supabase (without customer join to avoid FK issues)
       let ordersQuery = supabase
         .from('orders')
-        .select('*, order_items(*), customers(*)')
+        .select('*, order_items(*)')
         .order('created_at', { ascending: false });
         
       // Apply date filter
