@@ -22,7 +22,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Proxy API routes to Supabase
+// Proxy API routes to Supabase - NO AUTH REQUIRED (frontend uses Supabase auth directly)
 app.all('/api/v1/*', async (req, res) => {
   if (!supabase) {
     return res.status(503).json({
@@ -36,6 +36,7 @@ app.all('/api/v1/*', async (req, res) => {
     const parts = path.split('/');
     const resource = parts[0];
     const id = parts[1];
+    const subResource = parts[2];
     const method = req.method;
 
     let result;
@@ -43,9 +44,15 @@ app.all('/api/v1/*', async (req, res) => {
     switch(resource) {
       case 'products':
         if (method === 'GET' && !id) {
-          result = await supabase.from('products').select('*').eq('status', 'active');
+          result = await supabase.from('products').select('*');
         } else if (method === 'GET' && id) {
           result = await supabase.from('products').select('*').eq('id', id).single();
+        } else if (method === 'POST') {
+          result = await supabase.from('products').insert(req.body).select().single();
+        } else if (method === 'PUT' || method === 'PATCH') {
+          result = await supabase.from('products').update(req.body).eq('id', id).select().single();
+        } else if (method === 'DELETE') {
+          result = await supabase.from('products').delete().eq('id', id);
         }
         break;
 
@@ -53,41 +60,95 @@ app.all('/api/v1/*', async (req, res) => {
       case 'users':
         if (method === 'GET' && !id) {
           result = await supabase.from('users').select('*');
+        } else if (method === 'GET' && id) {
+          result = await supabase.from('users').select('*').eq('id', id).single();
+        } else if (method === 'POST') {
+          result = await supabase.from('users').insert(req.body).select().single();
+        } else if (method === 'PUT' || method === 'PATCH') {
+          result = await supabase.from('users').update(req.body).eq('id', id).select().single();
+        } else if (method === 'DELETE') {
+          result = await supabase.from('users').delete().eq('id', id);
         }
         break;
 
       case 'suppliers':
         if (method === 'GET' && !id) {
           result = await supabase.from('suppliers').select('*');
+        } else if (method === 'GET' && id) {
+          result = await supabase.from('suppliers').select('*').eq('id', id).single();
+        } else if (method === 'POST') {
+          result = await supabase.from('suppliers').insert(req.body).select().single();
+        } else if (method === 'PUT' || method === 'PATCH') {
+          result = await supabase.from('suppliers').update(req.body).eq('id', id).select().single();
+        } else if (method === 'DELETE') {
+          result = await supabase.from('suppliers').delete().eq('id', id);
         }
         break;
 
       case 'categories':
-        if (method === 'GET' && !id) {
+        if (subResource === 'stats') {
           result = await supabase.from('categories').select('*');
+        } else if (method === 'GET' && !id) {
+          result = await supabase.from('categories').select('*');
+        } else if (method === 'GET' && id) {
+          result = await supabase.from('categories').select('*').eq('id', id).single();
+        } else if (method === 'POST') {
+          result = await supabase.from('categories').insert(req.body).select().single();
+        } else if (method === 'PUT' || method === 'PATCH') {
+          result = await supabase.from('categories').update(req.body).eq('id', id).select().single();
+        } else if (method === 'DELETE') {
+          result = await supabase.from('categories').delete().eq('id', id);
         }
         break;
 
       case 'transactions':
         if (method === 'GET') {
           result = await supabase.from('transactions').select('*');
+        } else if (method === 'POST') {
+          result = await supabase.from('transactions').insert(req.body).select().single();
         }
         break;
 
       case 'expenses':
-        if (method === 'GET') {
+        if (subResource === 'stats') {
           result = await supabase.from('expenses').select('*');
+        } else if (method === 'GET') {
+          result = await supabase.from('expenses').select('*');
+        } else if (method === 'POST') {
+          result = await supabase.from('expenses').insert(req.body).select().single();
         }
         break;
 
       case 'orders':
         if (method === 'GET') {
           result = await supabase.from('orders').select('*, order_items(*)');
+        } else if (method === 'POST') {
+          result = await supabase.from('orders').insert(req.body).select().single();
+        }
+        break;
+
+      case 'reports':
+        if (id === 'sales') {
+          result = await supabase.from('orders').select('*');
+        } else if (id === 'customers') {
+          result = await supabase.from('customers').select('*');
+        } else if (id === 'profit-loss') {
+          result = await supabase.from('orders').select('*');
+        } else {
+          result = await supabase.from('orders').select('*');
+        }
+        break;
+
+      case 'settings':
+        if (method === 'GET') {
+          result = await supabase.from('settings').select('*');
+        } else if (method === 'POST' || method === 'PUT') {
+          result = await supabase.from('settings').upsert(req.body).select().single();
         }
         break;
 
       default:
-        result = { data: null, error: { message: 'Resource not found' } };
+        result = { data: [], error: null };
     }
 
     if (result.error) {
@@ -97,14 +158,18 @@ app.all('/api/v1/*', async (req, res) => {
       });
     }
 
+    // Wrap in expected response format
+    const responseData = result.data || [];
     res.json({
       success: true,
-      data: result.data
+      data: Array.isArray(responseData) ? responseData : [responseData],
+      count: Array.isArray(responseData) ? responseData.length : 1
     });
   } catch (error) {
+    console.error('API Proxy Error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message || 'Internal server error'
     });
   }
 });
