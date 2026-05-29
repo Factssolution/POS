@@ -21,26 +21,56 @@ app.get('/health', (req, res) => {
 
 // Lazy load full backend on first API request
 let backendApp = null;
+let backendLoading = false;
+let backendQueue = [];
 
-app.use('/api/v1', async (req, res, next) => {
-  try {
-    // Load backend only once
-    if (!backendApp) {
-      console.log('Loading backend server...');
-      const serverModule = require('../src/backend/server');
-      backendApp = serverModule;
-      console.log('Backend loaded successfully');
-    }
-    
-    // Forward request to backend
-    backendApp(req, res, next);
-  } catch (error) {
-    console.error('Failed to load backend:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Backend failed to load',
-      error: error.message
+const loadBackend = async () => {
+  if (backendApp) return backendApp;
+  
+  if (backendLoading) {
+    // Wait for existing load to complete
+    return new Promise((resolve, reject) => {
+      backendQueue.push({ resolve, reject });
     });
+  }
+  
+  backendLoading = true;
+  
+  try {
+    console.log('📦 Loading backend server...');
+    const serverModule = require('../src/backend/server');
+    backendApp = serverModule;
+    console.log('✅ Backend loaded successfully');
+    
+    // Resolve all waiting requests
+    backendQueue.forEach(({ resolve }) => resolve(backendApp));
+    backendQueue = [];
+    
+    return backendApp;
+  } catch (error) {
+    console.error('❌ Failed to load backend:', error);
+    backendQueue.forEach(({ reject }) => reject(error));
+    backendQueue = [];
+    throw error;
+  } finally {
+    backendLoading = false;
+  }
+};
+
+// Handle all API routes through backend
+app.all('/api/v1/*', async (req, res) => {
+  try {
+    const backend = await loadBackend();
+    // Pass the request directly to backend with original URL intact
+    backend(req, res);
+  } catch (error) {
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        message: 'Backend failed to load',
+        error: error.message
+      });
+    }
   }
 });
 
