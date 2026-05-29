@@ -4,6 +4,9 @@ dns.setDefaultResultOrder('ipv4first');
 
 const { Sequelize } = require('sequelize');
 
+// Explicitly load pg driver for PostgreSQL
+const pg = require('pg');
+
 // Only load dotenv if not on Vercel (Vercel injects env vars automatically)
 if (process.env.VERCEL !== '1') {
   require('dotenv').config();
