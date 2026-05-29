@@ -55,7 +55,7 @@ supabase-schema.sql
 # User files
 User File.txt
 login-test-result.png
-factssolution.jpeg
+# Keep public/factssolution.jpeg (used as logo)
 
 # Deployment configs for other platforms
 railway.json
