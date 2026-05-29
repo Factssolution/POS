@@ -3,9 +3,17 @@ const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first');
 
 const { Sequelize } = require('sequelize');
-require('dotenv').config();
 
-console.log('🔧 Database initialization started');
+// Only load dotenv if not on Vercel (Vercel injects env vars automatically)
+if (process.env.VERCEL !== '1') {
+  require('dotenv').config();
+}
+
+if (process.env.VERCEL === '1') {
+  console.log('🔧 Database initialization on Vercel serverless');
+} else {
+  console.log('🔧 Database initialization started');
+}
 
 let sequelize;
 
