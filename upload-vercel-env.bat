@@ -13,7 +13,7 @@ echo eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhmdX
 
 echo.
 echo Adding VITE_API_URL...
-echo https://pos-backend-production-ef0d.up.railway.app | vercel env add VITE_API_URL production
+echo https://backend-three-alpha-44.vercel.app/api/v1 | vercel env add VITE_API_URL production
 
 echo.
 echo ============================================
