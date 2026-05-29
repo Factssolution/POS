@@ -33,7 +33,7 @@ export default function Dashboard() {
       // Fetch orders directly from Supabase
       let ordersQuery = supabase
         .from('orders')
-        .select('*, order_items(*), customer(*)')
+        .select('*, order_items(*), customers(*)')
         .order('created_at', { ascending: false });
         
       // Apply date filter
