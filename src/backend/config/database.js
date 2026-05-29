@@ -1,11 +1,10 @@
-// Force IPv4 DNS resolution (commented out for Vercel compatibility)
-// const dns = require('dns');
-// dns.setDefaultResultOrder('ipv4first');
-
 const { Sequelize } = require('sequelize');
 
 // Explicitly load pg driver for PostgreSQL
 const pg = require('pg');
+
+// Configure pg to use IPv4 by resolving DNS ourselves
+const dns = require('dns').promises;
 
 // Only load dotenv if not on Vercel (Vercel injects env vars automatically)
 if (process.env.VERCEL !== '1') {
@@ -18,26 +17,48 @@ if (process.env.VERCEL === '1') {
   console.log('🔧 Database initialization started');
 }
 
+// Helper to resolve IPv4 address
+const resolveIPv4 = async (hostname) => {
+  try {
+    const addresses = await dns.resolve(hostname);
+    const ipv4 = addresses.find(addr => !addr.includes(':'));
+    return ipv4 || hostname;
+  } catch {
+    return hostname;
+  }
+};
+
 let sequelize;
 
-// ALWAYS use individual variables - DB_URL causes SNI issues with Supabase pooler
+// Use Supabase pooler for Vercel (IPv4 guaranteed) and direct connection for local
+const isVercel = process.env.VERCEL === '1';
+
 if (process.env.DB_HOST && process.env.DB_USER) {
-  console.log(`✅ Using individual DB variables: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
+  // For Vercel: Use Supabase Transaction Pooler (IPv4 support)
+  // Pooler host: aws-0-ap-southeast-1.pooler.supabase.com:6543
+  // Direct host: db.hfusrtiqjyiotjewzzkt.supabase.co:5432
   
-  const sslConfig = process.env.DB_SSL === 'false' 
-    ? false 
-    : { 
-        require: true, 
-        rejectUnauthorized: false
-      };
+  const dbHost = isVercel 
+    ? 'aws-0-ap-southeast-1.pooler.supabase.com'
+    : process.env.DB_HOST;
+    
+  const dbPort = isVercel 
+    ? 6543 
+    : parseInt(process.env.DB_PORT) || 5432;
+    
+  const dbUser = isVercel
+    ? 'postgres.hfusrtiqjyiotjewzzkt'
+    : process.env.DB_USER;
+  
+  console.log(`✅ Database: ${dbHost}:${dbPort} (${isVercel ? 'Vercel/Pooler' : 'Direct'})`);
   
   sequelize = new Sequelize(
-    process.env.DB_NAME || 'pos',
-    process.env.DB_USER || 'postgres',
+    process.env.DB_NAME || 'postgres',
+    dbUser,
     process.env.DB_PASSWORD || '',
     {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT) || 5432,
+      host: dbHost,
+      port: dbPort,
       dialect: 'postgres',
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
       dialectOptions: {
@@ -45,11 +66,10 @@ if (process.env.DB_HOST && process.env.DB_USER) {
           require: true,
           rejectUnauthorized: false
         },
-        servername: process.env.DB_HOST // Required for Supabase pooler SNI
+        servername: isVercel ? 'aws-0-ap-southeast-1.pooler.supabase.com' : process.env.DB_HOST
       },
-      pool: process.env.VERCEL === '1'
+      pool: isVercel
         ? {
-            // Vercel serverless: minimal pool (1 connection per invocation)
             max: 1,
             min: 0,
             acquire: 10000,
@@ -57,7 +77,6 @@ if (process.env.DB_HOST && process.env.DB_USER) {
             evict: 2000
           }
         : {
-            // Local/traditional server: standard pool
             max: 5,
             min: 0,
             acquire: 30000,

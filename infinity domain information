@@ -1,1 +1,54 @@
-vercel url = https://pos-iota-sage.vercel.app/
+supabase  information 
+
+Project name
+Displayed throughout the dashboard.
+hfusrtiqjyiotjewzzkt
+Project ID
+Reference used in APIs and URLs.
+ap-southeast-1
+Project region
+Southeast Asia (Singapore)
+
+Save changes
+
+Publishable key
+This key is safe to use in a browser if you have enabled Row Level Security (RLS) for your tables and configured policies.
+
+
+New publishable key
+Name	API Key	
+default
+No description
+sb_publishable_gzAeFoffKh4z1Lo3YJMi9Q_y41g5smI
+
+
+Publishable keys can be safely shared publicly
+
+Secret keys
+These API keys allow privileged access to your project's APIs. Use in servers, functions, workers or other backend components of your application.
+
+
+New secret key
+Name	API Key	
+pos_factssolution
+No description
+sb_secret_cnWYp
+kRuogjfX_ki1Ig_CQ_CHCfLPf7
+
+
+
+Legacy JWT secret (still used)
+
+nmL9RMKNNo7p7IfptT8P/qyLisY4anGFywgekRU5c2alE240R1Wj2XWdx8QwfVEB92G8hV+3NhsaYPiKNqaBSA==
+Used only to verify JWTs.
+3600
+Access token expiry time
+
+API URL
+RESTful endpoint for querying and managing your database
+Source
+
+Primary database
+https://hfusrtiqjyiotjewzzkt.supabase.co/rest/v1/
+
+
