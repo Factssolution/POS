@@ -47,7 +47,7 @@ if (process.env.DB_HOST && process.env.DB_USER) {
     : parseInt(process.env.DB_PORT) || 5432;
     
   const dbUser = isVercel
-    ? 'postgres.hfusrtiqjyiotjewzzkt'
+    ? 'postgres'
     : process.env.DB_USER;
   
   console.log(`✅ Database: ${dbHost}:${dbPort} (${isVercel ? 'Vercel/Pooler' : 'Direct'})`);
