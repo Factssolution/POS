@@ -28,11 +28,13 @@ if (process.env.DB_HOST && process.env.DB_USER) {
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT) || 5432,
       dialect: 'postgres',
+      logging: process.env.NODE_ENV === 'development' ? console.log : false,
       dialectOptions: {
         ssl: {
           require: true,
           rejectUnauthorized: false
-        }
+        },
+        servername: process.env.DB_HOST // Required for Supabase pooler SNI
       },
       pool: {
         max: 5,
