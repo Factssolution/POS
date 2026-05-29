@@ -9,22 +9,22 @@
       }
     },
     {
-      "src": "api/index.cjs",
+      "src": "api/minimal-handler.cjs",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/v1/(.*)",
-      "dest": "/api/index.cjs"
+      "dest": "/api/minimal-handler.cjs"
     },
     {
       "src": "/health",
-      "dest": "/api/index.cjs"
+      "dest": "/api/minimal-handler.cjs"
     },
     {
       "src": "/uploads/(.*)",
-      "dest": "/api/index.cjs"
+      "dest": "/api/minimal-handler.cjs"
     },
     {
       "src": "/(.*)",
