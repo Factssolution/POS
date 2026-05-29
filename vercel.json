@@ -9,22 +9,22 @@
       }
     },
     {
-      "src": "api/**/*.js",
+      "src": "api/**/*.cjs",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/v1/(.*)",
-      "dest": "/api/index.js"
+      "dest": "/api/index.cjs"
     },
     {
       "src": "/health",
-      "dest": "/api/index.js"
+      "dest": "/api/index.cjs"
     },
     {
       "src": "/uploads/(.*)",
-      "dest": "/api/index.js"
+      "dest": "/api/index.cjs"
     },
     {
       "src": "/(.*)",
