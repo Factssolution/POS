@@ -76,7 +76,7 @@ export const db = {
     getAll: async (filters: { startDate?: string; endDate?: string } = {}) => {
       let query = supabase
         .from('orders')
-        .select('*, order_items(*), customer(*)')
+        .select('*, order_items(*)')
         .order('created_at', { ascending: false })
 
       if (filters.startDate) {
@@ -151,6 +151,27 @@ export const auth = {
       password
     })
     if (error) throw error
+    
+    // Fetch user role from users table
+    if (data.user) {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, name, email, role')
+        .eq('email', email)
+        .single()
+      
+      if (userError) {
+        console.error('Error fetching user profile:', userError)
+      } else if (userData) {
+        // Attach user profile data to the auth response
+        data.user.user_metadata = {
+          ...data.user.user_metadata,
+          name: userData.name,
+          role: userData.role
+        }
+      }
+    }
+    
     return data
   },
   register: async (email, password, metadata = {}) => {

@@ -97,23 +97,10 @@ export default function Dashboard() {
         
       setSalesData(mappedSalesData);
       setRecentOrders(todayOrders.slice(0, 5));
-        
-      // Load suppliers
-      try {
-        const suppliersData = await api.getSuppliers();
-        setSuppliers(suppliersData || []);
-      } catch (err) {
-        console.error('Suppliers load error:', err);
-        setSuppliers([]);
-      }
-        
-      // Load settings
-      try {
-        const settingsData = await api.getSettings();
-        setSettings(settingsData);
-      } catch (err) {
-        console.error('Settings load error:', err);
-      }
+            
+      // Remove suppliers and settings calls - not needed for dashboard stats
+      setSuppliers([]);
+      setSettings({});
         
     } catch (error: any) {
       console.error('❌ Dashboard load error:', error);
