@@ -5,7 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
-import { api } from '../services/api';
+import { auth } from '../services/supabase';
 
 interface User {
   id: number;
@@ -55,11 +55,24 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
     setIsLoading(true);
 
     try {
-      // Call real backend API
-      const response = await api.login(formData.email, formData.password);
+      // Use Supabase Auth directly
+      const { user, session } = await auth.login(formData.email, formData.password);
       
-      // Pass user and token to parent component
-      onLogin(response.user, response.token);
+      if (!user || !session) {
+        toast.error('Login failed. Please try again.');
+        return;
+      }
+      
+      // Get user profile from metadata or use defaults
+      const userData = {
+        id: user.id,
+        name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+        email: user.email || '',
+        role: user.user_metadata?.role || 'cashier'
+      };
+      
+      // Pass user and Supabase session token to parent component
+      onLogin(userData as any, session.access_token);
       
       toast.success('Login successful!');
       
@@ -68,12 +81,12 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
       console.error('Login failed:', error.message);
       
       // Provide specific error messages
-      if (error.message.includes('401') || error.message.includes('Invalid email')) {
+      if (error.message.includes('Invalid login credentials')) {
         toast.error('Invalid email or password. Please check your credentials.');
-      } else if (error.message.includes('403') || error.message.includes('deactivated')) {
-        toast.error('Your account has been deactivated. Contact admin.');
-      } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        toast.error('Cannot connect to server. Please ensure backend is running.');
+      } else if (error.message.includes('Email not confirmed')) {
+        toast.error('Please verify your email address before logging in.');
+      } else if (error.message.includes('Too many requests')) {
+        toast.error('Too many login attempts. Please try again later.');
       } else {
         toast.error('Login failed. Please try again.');
       }
