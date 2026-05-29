@@ -4,6 +4,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { DollarSign, Users, ShoppingBag, TrendingUp, Truck, Printer } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { api, Supplier } from '../services/api';
+import { supabase } from '../services/supabase';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
@@ -24,50 +25,96 @@ export default function Dashboard() {
     try {
       setLoading(true);
       console.log('🔄 Loading dashboard data for timeframe:', timeFrame);
-      
+        
       // Get time range based on selected filter
       const { startDate, endDate } = getTimeRange();
-      console.log(' Time Range:', { startDate, endDate, timeFrame });
-      
-      // Load dashboard stats (already filtered by backend based on user role)
-      const statsResponse = await api.getDashboardStats(`timeFrame=${timeFrame}`);
-      console.log('✅ Dashboard Stats Loaded:', statsResponse);
-      setStats(statsResponse);
-      
-      // Load sales analytics with time range filter
-      const analyticsResponse = await api.getSalesAnalytics({ startDate, endDate });
-      console.log('✅ Sales Analytics Loaded:', {
-        dailySales: analyticsResponse.dailySales?.length || 0,
-        paymentBreakdown: analyticsResponse.paymentBreakdown?.length || 0
-      });
-      // Map dailySales to salesData format expected by charts
-      const mappedSalesData = (analyticsResponse.dailySales || []).map(item => ({
+      console.log('⏰ Time Range:', { startDate, endDate, timeFrame });
+        
+      // Fetch orders directly from Supabase
+      let ordersQuery = supabase
+        .from('orders')
+        .select('*, order_items(*), customer(*)')
+        .order('created_at', { ascending: false });
+        
+      // Apply date filter
+      if (timeFrame !== 'all') {
+        ordersQuery = ordersQuery.gte('created_at', startDate);
+      }
+        
+      const { data: orders, error: ordersError } = await ordersQuery;
+        
+      if (ordersError) {
+        console.error('Error fetching orders:', ordersError);
+        throw ordersError;
+      }
+        
+      console.log('✅ Orders loaded:', orders?.length || 0);
+        
+      // Calculate stats from orders
+      const todayOrders = orders || [];
+      const totalRevenue = todayOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+      const totalOrders = todayOrders.length;
+        
+      // Fetch products count
+      const { count: totalProducts } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true });
+        
+      // Fetch customers count
+      const { count: totalCustomers } = await supabase
+        .from('customers')
+        .select('*', { count: 'exact', head: true });
+        
+      // Prepare stats object
+      const statsData = {
+        today_revenue: totalRevenue,
+        today_orders: totalOrders,
+        total_revenue: totalRevenue,
+        total_orders: totalOrders,
+        total_products: totalProducts || 0,
+        total_customers: totalCustomers || 0
+      };
+        
+      console.log('📊 Dashboard Stats:', statsData);
+      setStats(statsData);
+        
+      // Prepare sales data for charts
+      const salesByDay = todayOrders.reduce((acc: any, order) => {
+        const date = new Date(order.created_at).toLocaleDateString();
+        if (!acc[date]) {
+          acc[date] = { date, revenue: 0, orders: 0 };
+        }
+        acc[date].revenue += order.total_amount || 0;
+        acc[date].orders += 1;
+        return acc;
+      }, {});
+        
+      const mappedSalesData = Object.values(salesByDay).map((item: any) => ({
         day: item.date,
         sales: item.revenue,
         orders: item.orders
       }));
+        
       setSalesData(mappedSalesData);
-      
-      // Load recent orders separately
+      setRecentOrders(todayOrders.slice(0, 5));
+        
+      // Load suppliers
       try {
-        const recentOrdersData = await api.getOrders({ limit: 5 });
-        setRecentOrders(recentOrdersData.orders || []);
-      } catch (error) {
-        setRecentOrders([]);
+        const suppliersData = await api.getSuppliers();
+        setSuppliers(suppliersData || []);
+      } catch (err) {
+        console.error('Suppliers load error:', err);
+        setSuppliers([]);
       }
-      
-      // Load suppliers for balance display
-      const suppliersData = await api.getSuppliers();
-      setSuppliers(suppliersData || []);
-      
-      // Load settings for company info
+        
+      // Load settings
       try {
         const settingsData = await api.getSettings();
         setSettings(settingsData);
       } catch (err) {
         console.error('Settings load error:', err);
       }
-      
+        
     } catch (error: any) {
       console.error('❌ Dashboard load error:', error);
       toast.error('Failed to load dashboard data');
