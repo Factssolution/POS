@@ -9,33 +9,8 @@ console.log('🔧 Database initialization started');
 
 let sequelize;
 
-// Always prefer individual variables over DB_URL when DB_HOST is set
-const useIndividualVars = process.env.DB_HOST && process.env.DB_USER;
-
-if (process.env.DB_URL && !useIndividualVars) {
-  console.log('✅ Using DB_URL connection string');
-  sequelize = new Sequelize(process.env.DB_URL, {
-    dialect: 'postgres',
-    logging: process.env.NODE_ENV === 'development' ? console.log : false,
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false
-      }
-    },
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
-    },
-    define: {
-      timestamps: true,
-      underscored: true,
-      freezeTableName: true
-    }
-  });
-} else if (process.env.DB_HOST) {
+// ALWAYS use individual variables - DB_URL causes SNI issues with Supabase pooler
+if (process.env.DB_HOST && process.env.DB_USER) {
   console.log(`✅ Using individual DB variables: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
   
   const sslConfig = process.env.DB_SSL === 'false' 
