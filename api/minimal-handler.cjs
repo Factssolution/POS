@@ -43,7 +43,10 @@ app.all('/api/v1/*', async (req, res) => {
 
     switch(resource) {
       case 'products':
-        if (method === 'GET' && !id) {
+        // Handle /products/categories as a separate route
+        if (id === 'categories') {
+          result = await supabase.from('categories').select('*').eq('is_active', true);
+        } else if (method === 'GET' && !id) {
           result = await supabase.from('products').select('*');
         } else if (method === 'GET' && id) {
           result = await supabase.from('products').select('*').eq('id', id).single();
@@ -87,15 +90,36 @@ app.all('/api/v1/*', async (req, res) => {
 
       case 'categories':
         if (subResource === 'stats') {
-          result = await supabase.from('categories').select('*');
+          const { data: cats } = await supabase.from('categories').select('*');
+          result = {
+            data: {
+              stats: cats || [],
+              total_categories: (cats || []).length,
+              active_categories: (cats || []).filter(c => c.is_active).length
+            },
+            error: null
+          };
         } else if (method === 'GET' && !id) {
           result = await supabase.from('categories').select('*');
         } else if (method === 'GET' && id) {
           result = await supabase.from('categories').select('*').eq('id', id).single();
         } else if (method === 'POST') {
-          result = await supabase.from('categories').insert(req.body).select().single();
+          // Map frontend fields to Supabase schema
+          const categoryData = {
+            name: req.body.name,
+            description: req.body.description || null,
+            parent_id: req.body.parent_id || null,
+            is_active: req.body.status === 'active' || req.body.is_active !== false
+          };
+          result = await supabase.from('categories').insert(categoryData).select().single();
         } else if (method === 'PUT' || method === 'PATCH') {
-          result = await supabase.from('categories').update(req.body).eq('id', id).select().single();
+          const categoryData = {
+            name: req.body.name,
+            description: req.body.description,
+            parent_id: req.body.parent_id,
+            is_active: req.body.status === 'active' || req.body.is_active !== false
+          };
+          result = await supabase.from('categories').update(categoryData).eq('id', id).select().single();
         } else if (method === 'DELETE') {
           result = await supabase.from('categories').delete().eq('id', id);
         }
@@ -111,7 +135,18 @@ app.all('/api/v1/*', async (req, res) => {
 
       case 'expenses':
         if (subResource === 'stats') {
-          result = await supabase.from('expenses').select('*');
+          const { data: exp } = await supabase.from('expenses').select('amount, category');
+          const totalAmount = (exp || []).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+          result = {
+            data: {
+              total_expenses: totalAmount,
+              by_category: (exp || []).reduce((acc, e) => {
+                acc[e.category] = (acc[e.category] || 0) + parseFloat(e.amount || 0);
+                return acc;
+              }, {})
+            },
+            error: null
+          };
         } else if (method === 'GET') {
           result = await supabase.from('expenses').select('*');
         } else if (method === 'POST') {
