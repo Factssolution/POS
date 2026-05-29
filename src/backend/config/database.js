@@ -30,45 +30,26 @@ const resolveIPv4 = async (hostname) => {
 
 let sequelize;
 
-// Use Supabase pooler for Vercel (IPv4 guaranteed) and direct connection for local
-const isVercel = process.env.VERCEL === '1';
-
+// Use direct Supabase connection (not pooler) with proper SSL configuration
 if (process.env.DB_HOST && process.env.DB_USER) {
-  // For Vercel: Use Supabase Transaction Pooler (IPv4 support)
-  // Pooler host: aws-0-ap-southeast-1.pooler.supabase.com:6543
-  // Direct host: db.hfusrtiqjyiotjewzzkt.supabase.co:5432
-  
-  const dbHost = isVercel 
-    ? 'aws-0-ap-southeast-1.pooler.supabase.com'
-    : process.env.DB_HOST;
-    
-  const dbPort = isVercel 
-    ? 6543 
-    : parseInt(process.env.DB_PORT) || 5432;
-    
-  const dbUser = isVercel
-    ? 'postgres.hfusrtiqjyiotjewzzkt'
-    : process.env.DB_USER;
-  
-  console.log(`✅ Database: ${dbHost}:${dbPort} (${isVercel ? 'Vercel/Pooler' : 'Direct'})`);
+  console.log(`✅ Database: ${process.env.DB_HOST}:${process.env.DB_PORT || 5432}`);
   
   sequelize = new Sequelize(
     process.env.DB_NAME || 'postgres',
-    dbUser,
+    process.env.DB_USER || 'postgres',
     process.env.DB_PASSWORD || '',
     {
-      host: dbHost,
-      port: dbPort,
+      host: process.env.DB_HOST || 'db.hfusrtiqjyiotjewzzkt.supabase.co',
+      port: parseInt(process.env.DB_PORT) || 5432,
       dialect: 'postgres',
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
       dialectOptions: {
         ssl: {
           require: true,
           rejectUnauthorized: false
-        },
-        servername: isVercel ? 'aws-0-ap-southeast-1.pooler.supabase.com' : process.env.DB_HOST
+        }
       },
-      pool: isVercel
+      pool: process.env.VERCEL === '1'
         ? {
             max: 1,
             min: 0,
