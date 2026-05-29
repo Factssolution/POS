@@ -1,18 +1,36 @@
+# ============================================
+# COMPREHENSIVE .GITIGNORE
+# POS Business Dashboard - ZAYQA
+# ============================================
+
 # Dependencies
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+.pnp
+.pnp.js
 
-# Environment variables
+# Testing
+coverage/
+*.log
+test-results/
+playwright-report/
+.nyc_output/
+
+# Production build
+dist/
+build/
+.vite/
+
+# Environment variables (CRITICAL)
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
+.env.test
+*.env
 
-# Build outputs
-dist/
-build/
-*.log
+# Vercel
+.vercel
 
 # IDE and editors
 .vscode/
@@ -20,33 +38,145 @@ build/
 *.swp
 *.swo
 *~
+.project
+.classpath
+.settings/
 
 # OS files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
 
-# Test results
-test-results/
-playwright-report/
-coverage/
+# Backend specific
+src/backend/node_modules/
+src/backend/.env
+src/backend/.env.*
+src/backend/*.log
 
-# Backup files
-*.backup*
+# Database
+*.sql
+*.db
+*.sqlite
+*.sqlite3
+
+# Backups
+*.backup
 *.bak
+*.backup.*
+backups/
+src/backups/
 
 # Temporary files
 *.tmp
 *.temp
+*.swp
+*.swo
+.cache/
 
-# Node modules (both root and backend)
-node_modules
-src/backend/node_modules
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
-# Backend environment file (contains secrets)
-src/backend/.env
-src/backend/.env.production
-.vercel
-.env
-.env.local
-.env.*.local
-!env.example
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Documentation (optional - uncomment if needed)
+# *.md
+# docs/
+
+# Credentials and keys (CRITICAL)
+*.pem
+*.key
+credentials.json
+service-account.json
+firebase-adminsdk-*.json
+
+# Playwright
+.playwright/
+
+# TypeScript
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn
+.yarn-integrity
+.pnp.*
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Parcel cache
+.cache/
+.parcel-cache/
+
+# Next.js
+.next/
+out/
+
+# Nuxt.js
+.nuxt/
+
+# Gatsby
+public/
+.cache/
+
+# Vue
+dist/
+
+# Svelte
+.svelte-kit/
+
+# Astro
+dist/
+
+# Windows
+Windows/
+Program Files/
+Program Files (x86)/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Lock files (keep package-lock.json but ignore others)
+npm-shrinkwrap.json
+pnpm-lock.yaml
+yarn.lock
+
+# Secrets (double protection)
+**/secrets/
+**/.secrets/
+**/*secret*
+**/*password*
+**/*credential*
