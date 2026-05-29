@@ -36,12 +36,22 @@ if (process.env.DB_HOST && process.env.DB_USER) {
         },
         servername: process.env.DB_HOST // Required for Supabase pooler SNI
       },
-      pool: {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000
-      },
+      pool: process.env.VERCEL === '1'
+        ? {
+            // Vercel serverless: minimal pool (1 connection per invocation)
+            max: 1,
+            min: 0,
+            acquire: 10000,
+            idle: 5000,
+            evict: 2000
+          }
+        : {
+            // Local/traditional server: standard pool
+            max: 5,
+            min: 0,
+            acquire: 30000,
+            idle: 10000
+          },
       define: {
         timestamps: true,
         underscored: true,

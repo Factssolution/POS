@@ -1,5 +1,7 @@
 // Real API service for POS system - Connected to Backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://backend-three-alpha-44.vercel.app/api/v1';
+// For Vercel deployment, use relative path (same domain)
+// For local development, use environment variable
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 // Helper to get auth headers
 const getAuthHeaders = () => {

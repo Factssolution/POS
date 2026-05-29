@@ -9,6 +9,9 @@ const backupEncryption = require('./backupEncryption');
 
 const execPromise = util.promisify(exec);
 
+// Detect if running on Vercel (serverless)
+const isVercel = process.env.VERCEL === '1';
+
 // Get database connection details from environment
 const DB_CONFIG = {
   host: process.env.DB_HOST || 'localhost',
@@ -118,6 +121,15 @@ const ensureBackupDir = (customPath) => {
  */
 exports.createBackup = async (options = {}) => {
   try {
+    // Check if running on Vercel (serverless doesn't support pg_dump or file system writes)
+    if (isVercel) {
+      throw new Error(
+        'Database backups are not available in serverless mode. ' +
+        'Please use the Supabase dashboard (https://hfusrtiqjyiotjewzzkt.supabase.co) to create database backups, ' +
+        'or deploy the backend on a traditional server with file system access.'
+      );
+    }
+
     const backupDir = ensureBackupDir(options.backupPath);
 
     const {

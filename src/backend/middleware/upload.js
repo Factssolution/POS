@@ -2,6 +2,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+// Detect if running on Vercel (read-only filesystem)
+const isVercel = process.env.VERCEL === '1';
+
 // Create uploads directories if they don't exist (skip on Vercel/serverless)
 const uploadDirs = [
   './uploads/products',
@@ -10,7 +13,7 @@ const uploadDirs = [
 ];
 
 // Skip directory creation on Vercel (read-only filesystem)
-if (process.env.VERCEL !== '1') {
+if (!isVercel) {
   uploadDirs.forEach(dir => {
     try {
       if (!fs.existsSync(dir)) {
@@ -23,25 +26,31 @@ if (process.env.VERCEL !== '1') {
 }
 
 // Configure storage for products
-const productStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, './uploads/products');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Use memory storage on Vercel (read-only filesystem), disk storage locally
+const productStorage = isVercel
+  ? multer.memoryStorage() // Store in memory on Vercel
+  : multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, './uploads/products');
+      },
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname));
+      }
+    });
 
 // Configure storage for logos
-const logoStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, './uploads/logos');
-  },
-  filename: (req, file, cb) => {
-    cb(null, 'company-logo' + path.extname(file.originalname));
-  }
-});
+// Use memory storage on Vercel (read-only filesystem), disk storage locally
+const logoStorage = isVercel
+  ? multer.memoryStorage() // Store in memory on Vercel
+  : multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, './uploads/logos');
+      },
+      filename: (req, file, cb) => {
+        cb(null, 'company-logo' + path.extname(file.originalname));
+      }
+    });
 
 // File filter
 const fileFilter = (req, file, cb) => {

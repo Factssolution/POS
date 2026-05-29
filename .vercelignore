@@ -1,0 +1,64 @@
+# Exclude unnecessary files from Vercel deployment
+# This reduces deployment size and improves build times
+
+# Test files and reports
+test-*.js
+test-results/
+playwright-report/
+tests/
+*.spec.ts
+*.test.js
+
+# Documentation (keep README)
+*.md
+!README.md
+
+# Backend scripts (not needed in production)
+src/backend/scripts/
+src/backend/test-*.js
+src/backend/verify-*.js
+src/backend/check-*.js
+src/backend/diagnose-*.js
+src/backend/audit-*.js
+
+# Production build folder
+POS-Production-Build/
+POS-Production-Build.zip
+
+# Development tools
+.qoder/
+.vscode/
+.idea/
+
+# Environment files (already ignored but be explicit)
+.env
+.env.local
+.env.production
+.env.example
+
+# Database files
+*.sql
+database-schema.sql
+supabase-schema.sql
+
+# Batch scripts (Windows only)
+*.bat
+*.ps1
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.bak
+*.backup*
+
+# User files
+User File.txt
+login-test-result.png
+factssolution.jpeg
+
+# Deployment configs for other platforms
+railway.json
+render.yaml
+render-backend.yaml
+vercel-backend.json

@@ -118,32 +118,46 @@ const PORT = process.env.PORT || 5000;
 const { initializeScheduledBackups } = require('./controllers/scheduledBackup');
 
 const startServer = async () => {
-  try {
-    // Start server first (before database connection)
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📍 API URL: http://localhost:${PORT}/api/v1`);
-      console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-      
-      // Initialize scheduled backups
-      initializeScheduledBackups();
-    });
-
-    // Test database connection (non-blocking)
+  // Only start listener if NOT running on Vercel serverless
+  if (process.env.VERCEL !== '1') {
     try {
-      await sequelize.authenticate();
-      console.log('✅ Database connected successfully');
-      
-      // Sync database (create tables if not exist)
-      await sequelize.sync({ alter: false });
-      console.log('✅ Database synced');
-    } catch (dbError) {
-      console.error('⚠️  Database connection failed:', dbError.message);
-      console.log('⚠️  Server will continue running but database operations will fail');
+      // Start server first (before database connection)
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`📍 API URL: http://localhost:${PORT}/api/v1`);
+        console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+        
+        // Initialize scheduled backups ONLY on local/traditional servers
+        // Vercel serverless doesn't support long-running cron jobs
+        if (process.env.VERCEL !== '1') {
+          initializeScheduledBackups();
+        }
+      });
+
+      // Test database connection (non-blocking)
+      try {
+        await sequelize.authenticate();
+        console.log('✅ Database connected successfully');
+        
+        // Sync database (create tables if not exist)
+        await sequelize.sync({ alter: false });
+        console.log('✅ Database synced');
+      } catch (dbError) {
+        console.error('⚠️  Database connection failed:', dbError.message);
+        console.log('⚠️  Server will continue running but database operations will fail');
+      }
+    } catch (error) {
+      console.error('❌ Failed to start server:', error);
+      // Don't use process.exit() in serverless - throw error instead
+      if (process.env.VERCEL === '1') {
+        throw error;
+      } else {
+        process.exit(1);
+      }
     }
-  } catch (error) {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
+  } else {
+    // Vercel serverless mode - just connect to database
+    console.log('🚀 Running on Vercel serverless');
   }
 };
 
