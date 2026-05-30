@@ -269,7 +269,16 @@ class APIService {
   async getProducts(params?: { status?: string; category?: string; search?: string; page?: number; limit?: number }): Promise<ProductResponse> {
     const queryString = new URLSearchParams(params as any).toString();
     const response = await apiCall(`/products${queryString ? '?' + queryString : ''}`);
-    return response.data;
+    // API returns { success: true, products: [...], count: X }
+    return {
+      products: response.products || [],
+      pagination: {
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: response.count || 0,
+        itemsPerPage: response.count || 0
+      }
+    };
   }
 
   async getCategories(): Promise<{ categories: Array<{id: number; name: string; description: string | null; color: string; icon: string}>; count: number }> {
@@ -281,7 +290,11 @@ class APIService {
   async getCategoryList(params?: { status?: string; search?: string }): Promise<{ categories: Category[]; count: number }> {
     const queryString = new URLSearchParams(params as any).toString();
     const response = await apiCall(`/categories${queryString ? '?' + queryString : ''}`);
-    return response.data;
+    // API returns { success: true, categories: [...], count: X }
+    return {
+      categories: response.categories || [],
+      count: response.count || 0
+    };
   }
 
   async getCategoryById(id: number): Promise<Category> {
