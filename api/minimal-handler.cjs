@@ -76,7 +76,23 @@ app.all('/api/v1/*', async (req, res) => {
       case 'employees':
       case 'users':
         if (method === 'GET' && !id) {
-          result = await supabase.from('users').select('*');
+          // Try profiles table first (Supabase Auth), fallback to users table
+          const { data: profiles, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, email, full_name as name, role, phone, is_active as status, created_at');
+          
+          if (profilesError && profilesError.message.includes('Could not find')) {
+            // Profiles table doesn't exist, try users table
+            result = await supabase.from('users').select('*');
+          } else {
+            result = { data: profiles || [], error: profilesError };
+          }
+          
+          console.log('📊 Users/Employees Query:', {
+            source: profiles ? 'profiles' : 'users',
+            count: (profiles || []).length,
+            error: profilesError?.message
+          });
         } else if (method === 'GET' && id) {
           result = await supabase.from('users').select('*').eq('id', id).single();
         } else if (method === 'POST') {
