@@ -131,9 +131,21 @@ export default function App() {
   }
 
   // Filter menu items based on user role
-  const availableMenuItems = menuItems.filter(item => 
+  console.log(' Menu Filter Debug:', {
+    currentUserRole: currentUser?.role,
+    totalMenus: menuItems.length,
+    menuItemsWithSuperAdmin: menuItems.filter(m => m.roles.includes('super_admin')).length
+  });
+    
+  const availableMenuItems = menuItems.filter(item =>
     currentUser && item.roles.includes(currentUser.role)
   );
+    
+  console.log('✅ Available Menus for Role:', {
+    role: currentUser?.role,
+    availableCount: availableMenuItems.length,
+    menus: availableMenuItems.map(m => m.label)
+  });
 
   // Ensure active tab is accessible, otherwise redirect to first available
   const isCurrentTabAccessible = availableMenuItems.some(item => item.id === activeTab);
