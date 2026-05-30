@@ -151,6 +151,14 @@ export default function App() {
   const isCurrentTabAccessible = availableMenuItems.some(item => item.id === activeTab);
   const displayActiveTab = isCurrentTabAccessible ? activeTab : availableMenuItems[0]?.id || 'dashboard';
 
+  // Auto-redirect super_admin to Super Admin dashboard on first load
+  useEffect(() => {
+    if (currentUser?.role === 'super_admin' && activeTab === 'dashboard') {
+      console.log('🚀 Auto-redirecting Super Admin to Super Admin Dashboard');
+      setActiveTab('super-admin');
+    }
+  }, [currentUser?.role]);
+
   const ActiveComponent = availableMenuItems.find(item => item.id === displayActiveTab)?.component || Dashboard;
 
   return (
