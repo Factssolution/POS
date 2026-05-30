@@ -152,35 +152,57 @@ export const auth = {
     })
     if (error) throw error
     
-    // Fetch user role from users table (handle gracefully if table doesn't exist or user not found)
+    // Fetch user role from profiles table (Supabase Auth)
     if (data.user) {
       try {
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('id, name, email, role')
+        // Try profiles table first (Supabase Auth), fallback to users table
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, email, full_name, role, is_active')
           .eq('email', email)
-          .maybeSingle()  // Use maybeSingle() instead of single() to handle 0 rows
+          .maybeSingle()
         
-        if (userError) {
-          // Table might not exist or other error - use auth metadata as fallback
-          console.warn('Users table query failed, using auth metadata:', userError.message)
-        } else if (userData) {
-          // Attach user profile data to the auth response
+        if (profileError && profileError.message.includes('Could not find')) {
+          // Profiles table doesn't exist, try users table
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('id, name, email, role')
+            .eq('email', email)
+            .maybeSingle()
+          
+          if (userError) {
+            console.warn('Users table query failed, using auth metadata:', userError.message)
+          } else if (userData) {
+            data.user.user_metadata = {
+              ...data.user.user_metadata,
+              name: userData.name || data.user.email?.split('@')[0],
+              role: userData.role || 'Admin'
+            }
+          } else {
+            data.user.user_metadata = {
+              ...data.user.user_metadata,
+              name: data.user.email?.split('@')[0] || 'User',
+              role: 'Admin'
+            }
+          }
+        } else if (profileData) {
+          // Profile found - use it
           data.user.user_metadata = {
             ...data.user.user_metadata,
-            name: userData.name || data.user.email?.split('@')[0],
-            role: userData.role || 'Admin'  // Default to Admin if not found
+            name: profileData.full_name || data.user.email?.split('@')[0],
+            role: profileData.role || 'Admin',
+            is_active: profileData.is_active
           }
+          console.log('✅ Super Admin Login - Role:', profileData.role)
         } else {
-          // User not in users table - use default values
+          // Profile not found - use default values
           data.user.user_metadata = {
             ...data.user.user_metadata,
             name: data.user.email?.split('@')[0] || 'User',
-            role: 'Admin'  // Default role
+            role: 'Admin'
           }
         }
       } catch (e) {
-        // Critical error - use fallback
         console.warn('Error fetching user profile, using defaults:', e)
         data.user.user_metadata = {
           ...data.user.user_metadata,
