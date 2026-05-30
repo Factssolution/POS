@@ -359,8 +359,8 @@ class APIService {
   // Employees - Now using Users API
   async getEmployees(): Promise<{ employees: Employee[]; count: number }> {
     const response = await apiCall('/users');
-    // Map users to employees format for compatibility
-    const users = response.users || [];
+    // API returns { success: true, data: [...] } for users endpoint
+    const users = response.data || response.users || [];
     return {
       employees: users.map((u: any) => ({
         id: u.id,
@@ -368,7 +368,7 @@ class APIService {
         email: u.email,
         phone: u.phone || '',
         role: u.role,
-        status: u.status,
+        status: u.status || 'active',
         created_at: u.createdAt || u.created_at
       })),
       count: response.count || users.length
@@ -424,7 +424,8 @@ class APIService {
   // Suppliers
   async getSuppliers(): Promise<Supplier[]> {
     const response = await apiCall('/suppliers');
-    return response.data;
+    // API returns { success: true, data: [...] } for suppliers
+    return response.data || response.suppliers || [];
   }
 
   async getSupplierById(id: number): Promise<Supplier> {
@@ -695,7 +696,8 @@ class APIService {
   }): Promise<any> {
     const queryString = new URLSearchParams(params as any).toString();
     const response = await apiCall(`/expenses${queryString ? '?' + queryString : ''}`);
-    return response.data;
+    // API returns { success: true, data: [...] } for expenses
+    return response.data || response.expenses || [];
   }
 
   async getExpenseStats(params?: { startDate?: string; endDate?: string }): Promise<any> {
