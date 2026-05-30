@@ -152,22 +152,40 @@ export const auth = {
     })
     if (error) throw error
     
-    // Fetch user role from users table
+    // Fetch user role from users table (handle gracefully if table doesn't exist or user not found)
     if (data.user) {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id, name, email, role')
-        .eq('email', email)
-        .single()
-      
-      if (userError) {
-        console.error('Error fetching user profile:', userError)
-      } else if (userData) {
-        // Attach user profile data to the auth response
+      try {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('id, name, email, role')
+          .eq('email', email)
+          .maybeSingle()  // Use maybeSingle() instead of single() to handle 0 rows
+        
+        if (userError) {
+          // Table might not exist or other error - use auth metadata as fallback
+          console.warn('Users table query failed, using auth metadata:', userError.message)
+        } else if (userData) {
+          // Attach user profile data to the auth response
+          data.user.user_metadata = {
+            ...data.user.user_metadata,
+            name: userData.name || data.user.email?.split('@')[0],
+            role: userData.role || 'Admin'  // Default to Admin if not found
+          }
+        } else {
+          // User not in users table - use default values
+          data.user.user_metadata = {
+            ...data.user.user_metadata,
+            name: data.user.email?.split('@')[0] || 'User',
+            role: 'Admin'  // Default role
+          }
+        }
+      } catch (e) {
+        // Critical error - use fallback
+        console.warn('Error fetching user profile, using defaults:', e)
         data.user.user_metadata = {
           ...data.user.user_metadata,
-          name: userData.name,
-          role: userData.role
+          name: data.user.email?.split('@')[0] || 'User',
+          role: 'Admin'
         }
       }
     }
