@@ -33,18 +33,18 @@ import SuperAdminDashboard from './components/SuperAdminDashboard';
 import { toast, Toaster } from 'sonner';
 
 const menuItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: BarChart3, component: Dashboard, roles: ['Admin', 'Manager', 'Cashier'] },
-  { id: 'super-admin', label: 'Super Admin', icon: Shield, component: SuperAdminDashboard, roles: ['Super Admin'] },
-  { id: 'pos', label: 'POS System', icon: ShoppingCart, component: POSSystem, roles: ['Admin', 'Manager', 'Cashier'] },
-  { id: 'products', label: 'Add Items', icon: Package, component: ProductManagement, roles: ['Admin', 'Manager'] },
-  { id: 'categories', label: 'Categories', icon: FolderTree, component: CategoryManagement, roles: ['Admin', 'Manager'] },
-  { id: 'employees', label: 'Employees', icon: Users, component: EmployeeManagement, roles: ['Admin', 'Manager'] },
-  { id: 'suppliers', label: 'Suppliers', icon: Truck, component: SupplierManagement, roles: ['Admin', 'Manager'] },
-  { id: 'expenses', label: 'Expenses', icon: Wallet, component: ExpenseManagement, roles: ['Admin', 'Manager'] },
-  { id: 'credit-debit', label: 'Credit & Debit', icon: CreditCard, component: CreditDebit, roles: ['Admin', 'Manager'] },
-  { id: 'reports', label: 'Reports', icon: FileText, component: Reports, roles: ['Admin', 'Manager'] },
-  { id: 'customer-reports', label: 'Customer Reports', icon: Users, component: CustomerReports, roles: ['Admin', 'Manager'] },
-  { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage, roles: ['Admin'] },
+  { id: 'dashboard', label: 'Dashboard', icon: BarChart3, component: Dashboard, roles: ['Admin', 'Manager', 'Cashier', 'super_admin'] },
+  { id: 'super-admin', label: 'Super Admin', icon: Shield, component: SuperAdminDashboard, roles: ['super_admin'] },
+  { id: 'pos', label: 'POS System', icon: ShoppingCart, component: POSSystem, roles: ['Admin', 'Manager', 'Cashier', 'super_admin'] },
+  { id: 'products', label: 'Add Items', icon: Package, component: ProductManagement, roles: ['Admin', 'Manager', 'super_admin'] },
+  { id: 'categories', label: 'Categories', icon: FolderTree, component: CategoryManagement, roles: ['Admin', 'Manager', 'super_admin'] },
+  { id: 'employees', label: 'Employees', icon: Users, component: EmployeeManagement, roles: ['Admin', 'Manager', 'super_admin'] },
+  { id: 'suppliers', label: 'Suppliers', icon: Truck, component: SupplierManagement, roles: ['Admin', 'Manager', 'super_admin'] },
+  { id: 'expenses', label: 'Expenses', icon: Wallet, component: ExpenseManagement, roles: ['Admin', 'Manager', 'super_admin'] },
+  { id: 'credit-debit', label: 'Credit & Debit', icon: CreditCard, component: CreditDebit, roles: ['Admin', 'Manager', 'super_admin'] },
+  { id: 'reports', label: 'Reports', icon: FileText, component: Reports, roles: ['Admin', 'Manager', 'super_admin'] },
+  { id: 'customer-reports', label: 'Customer Reports', icon: Users, component: CustomerReports, roles: ['Admin', 'Manager', 'super_admin'] },
+  { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage, roles: ['Admin', 'super_admin'] },
 ];
 
 interface User {
