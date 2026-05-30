@@ -128,7 +128,15 @@ app.all('/api/v1/*', async (req, res) => {
             error: null
           };
         } else if (method === 'GET' && !id) {
-          result = await supabase.from('categories').select('*');
+          // Get all categories with detailed logging
+          const queryResult = await supabase.from('categories').select('*');
+          console.log('📊 Categories Query Result:', {
+            hasError: !!queryResult.error,
+            errorMessage: queryResult.error?.message,
+            dataCount: queryResult.data?.length || 0,
+            firstItem: queryResult.data?.[0]
+          });
+          result = queryResult;
         } else if (method === 'GET' && id) {
           result = await supabase.from('categories').select('*').eq('id', id).single();
         } else if (method === 'POST') {
