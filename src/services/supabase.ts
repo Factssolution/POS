@@ -1,12 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Supabase configuration
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
-}
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hfusrtiqjyiotjewzzkt.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhmdXNydGlxanlpb3RqZXd6emt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDExODYsImV4cCI6MjA5NTM3NzE4Nn0.Hihh9K0B1WIsZxlIZBEBfIp9ouUL3ZkG3cpnrfxOEdM';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -187,13 +183,20 @@ export const auth = {
           }
         } else if (profileData) {
           // Profile found - use it
+          console.log('🔍 Profile Data Found:', {
+            email: profileData.email,
+            role: profileData.role,
+            full_name: profileData.full_name,
+            is_active: profileData.is_active
+          });
+          
           data.user.user_metadata = {
             ...data.user.user_metadata,
             name: profileData.full_name || data.user.email?.split('@')[0],
             role: profileData.role || 'Admin',
             is_active: profileData.is_active
-          }
-          console.log('✅ Super Admin Login - Role:', profileData.role)
+          };
+          console.log('✅ Login Success - Role:', profileData.role);
         } else {
           // Profile not found - use default values
           data.user.user_metadata = {
