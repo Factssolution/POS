@@ -6,27 +6,24 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 app.use(express.json());
 
-// Initialize Supabase client with SERVICE ROLE KEY to bypass RLS
+// Initialize Supabase client with ANON KEY
+// IMPORTANT: If you get "Invalid API key" or RLS errors, you need to:
+// 1. Go to Supabase Dashboard > Project Settings > API
+// 2. Copy the "service_role key (secret)" 
+// 3. Replace the anon key below with the service_role key
+// OR disable RLS on tables: ALTER TABLE categories DISABLE ROW LEVEL SECURITY;
 const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://hfusrtiqjyiotjewzzkt.supabase.co';
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhmdXNydGlxanlpb3RqZXd6emt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDExODYsImV4cCI6MjA5NTM3NzE4Nn0.Hihh9K0B1WIsZxlIZBEBfIp9ouUL3ZkG3cpnrfxOEdM';
-// Service role key bypasses RLS - use this for API proxy
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhmdXNydGlxanlpb3RqZXd6emt0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTgwMTE4NiwiZXhwIjoyMDk1Mzc3MTg2fQ.S5V8Q7J8X9Z1Y2W3V4U5T6R7E8W9Q0A1B2C3D4E5F6G';
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Health endpoint
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
-    message: 'POS Backend API - Supabase Proxy Mode (Service Role)',
+    message: 'POS Backend API - Supabase Proxy Mode',
     timestamp: new Date().toISOString(),
     mode: 'serverless-supabase-proxy',
-    database: 'supabase-connected',
-    rls: 'bypassed-with-service-role'
+    database: 'supabase-connected'
   });
 });
 
