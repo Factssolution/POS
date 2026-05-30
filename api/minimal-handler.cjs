@@ -51,6 +51,22 @@ app.all('/api/v1/*', async (req, res) => {
         } else if (method === 'GET' && id) {
           result = await supabase.from('products').select('*').eq('id', id).single();
         } else if (method === 'POST') {
+          // Check for duplicate products by SKU or name
+          if (req.body.sku) {
+            const { data: existingSku } = await supabase
+              .from('products')
+              .select('id')
+              .eq('sku', req.body.sku)
+              .single();
+            
+            if (existingSku) {
+              return res.status(409).json({
+                success: false,
+                message: `Product with SKU '${req.body.sku}' already exists`
+              });
+            }
+          }
+          
           result = await supabase.from('products').insert(req.body).select().single();
         } else if (method === 'PUT' || method === 'PATCH') {
           result = await supabase.from('products').update(req.body).eq('id', id).select().single();
@@ -80,6 +96,20 @@ app.all('/api/v1/*', async (req, res) => {
         } else if (method === 'GET' && id) {
           result = await supabase.from('suppliers').select('*').eq('id', id).single();
         } else if (method === 'POST') {
+          // Check for duplicate supplier by name
+          const { data: existingSupplier } = await supabase
+            .from('suppliers')
+            .select('id')
+            .eq('name', req.body.name)
+            .single();
+          
+          if (existingSupplier) {
+            return res.status(409).json({
+              success: false,
+              message: `Supplier '${req.body.name}' already exists`
+            });
+          }
+          
           result = await supabase.from('suppliers').insert(req.body).select().single();
         } else if (method === 'PUT' || method === 'PATCH') {
           result = await supabase.from('suppliers').update(req.body).eq('id', id).select().single();
@@ -111,6 +141,22 @@ app.all('/api/v1/*', async (req, res) => {
             parent_id: req.body.parent_id || null,
             is_active: req.body.status === 'active' || req.body.is_active !== false
           };
+          
+          // Check if category with same name already exists
+          const { data: existing } = await supabase
+            .from('categories')
+            .select('id')
+            .eq('name', req.body.name)
+            .single();
+          
+          if (existing) {
+            return res.status(409).json({
+              success: false,
+              message: `Category '${req.body.name}' already exists`,
+              data: existing
+            });
+          }
+          
           result = await supabase.from('categories').insert(categoryData).select().single();
         } else if (method === 'PUT' || method === 'PATCH') {
           const categoryData = {
