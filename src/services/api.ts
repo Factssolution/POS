@@ -806,11 +806,47 @@ class APIService {
     payment_method?: string;
     notes?: string;
   }): Promise<any> {
-    const response = await apiCall('/settings/license/generate', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    return response.data;
+    try {
+      const response = await apiCall('/settings/license/generate', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      return response.data;
+    } catch (error) {
+      // Fallback to Supabase
+      console.log(' Backend API unavailable, using Supabase fallback for generate');
+      const { supabase } = await import('./supabase');
+      
+      // Generate a random license key
+      const licenseKey = 'LIC-' + Math.random().toString(36).substring(2, 15).toUpperCase() + '-' + Date.now();
+      
+      const { data: newLicense, error: insertError } = await supabase
+        .from('licenses')
+        .insert([{
+          license_key: licenseKey,
+          client_email: data.client_email,
+          client_name: data.client_name || null,
+          client_phone: data.client_phone || null,
+          client_company: data.client_company || null,
+          plan_type: data.plan_type || 'monthly',
+          plan_duration: data.plan_type === 'monthly' ? 30 : data.plan_type === 'yearly' ? 365 : 99999,
+          price: data.price || 0,
+          status: 'active',
+          issued_date: new Date().toISOString(),
+          expiry_date: data.plan_type === 'lifetime' ? null : new Date(Date.now() + (data.plan_type === 'monthly' ? 30 : 365) * 24 * 60 * 60 * 1000).toISOString(),
+          created_by: 1 // Default super admin
+        }])
+        .select()
+        .single();
+      
+      if (insertError) throw insertError;
+      
+      return {
+        success: true,
+        license_key: licenseKey,
+        license: newLicense
+      };
+    }
   }
 
   async activateLicense(license_key: string, client_email?: string): Promise<any> {
@@ -827,22 +863,105 @@ class APIService {
   }
 
   async getLicenseStatus(): Promise<any> {
-    const response = await apiCall('/settings/license/status');
-    return response.data; // This is correct - returns the data object
+    try {
+      // Try backend API first
+      const response = await apiCall('/settings/license/status');
+      return response.data;
+    } catch (error) {
+      // Fallback to Supabase
+      console.log(' Backend API unavailable, using Supabase fallback');
+      const { supabase } = await import('./supabase');
+      
+      // Get license settings
+      const { data: settings } = await supabase
+        .from('settings')
+        .select('key, value')
+        .in('key', ['license_key', 'license_status', 'trial_end_date', 'is_trial'])
+      
+      const statusMap: any = {};
+      settings?.forEach((s: any) => {
+        statusMap[s.key] = s.value;
+      });
+      
+      return {
+        is_trial: statusMap.is_trial === 'true' || false,
+        license_status: statusMap.license_status || 'trial',
+        license_key: statusMap.license_key || null,
+        trial_end_date: statusMap.trial_end_date || null,
+        days_remaining: statusMap.trial_end_date ? Math.ceil((new Date(statusMap.trial_end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 30,
+        is_expired: statusMap.license_status === 'expired'
+      };
+    }
   }
 
   async getAllLicenses(params?: { page?: number; limit?: number; status?: string; search?: string }): Promise<any> {
-    const queryString = params ? new URLSearchParams(params as any).toString() : '';
-    const endpoint = queryString ? `/settings/license/all?${queryString}` : '/settings/license/all';
-    const response = await apiCall(endpoint);
-    return response; // Return full response {success, data, pagination}
+    try {
+      // Try backend API first
+      const queryString = params ? new URLSearchParams(params as any).toString() : '';
+      const endpoint = queryString ? `/settings/license/all?${queryString}` : '/settings/license/all';
+      const response = await apiCall(endpoint);
+      return response;
+    } catch (error) {
+      // Fallback to Supabase
+      console.log(' Backend API unavailable, using Supabase fallback for licenses');
+      const { supabase } = await import('./supabase');
+      
+      const page = params?.page || 1;
+      const limit = params?.limit || 20;
+      const offset = (page - 1) * limit;
+      
+      let query = supabase
+        .from('licenses')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+      
+      if (params?.status) {
+        query = query.eq('status', params.status);
+      }
+      
+      if (params?.search) {
+        query = query.or(`client_email.ilike.%${params.search}%,client_name.ilike.%${params.search}%`);
+      }
+      
+      const { data, error: queryError, count } = await query;
+      
+      if (queryError) {
+        console.error('Supabase licenses query error:', queryError);
+        return { data: [], pagination: { currentPage: page, totalPages: 1, totalItems: 0 } };
+      }
+      
+      return {
+        success: true,
+        data: data || [],
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil((count || 0) / limit),
+          totalItems: count || 0
+        }
+      };
+    }
   }
 
   async revokeLicense(licenseId: number): Promise<any> {
-    const response = await apiCall(`/settings/license/revoke/${licenseId}`, {
-      method: 'POST'
-    });
-    return response.data;
+    try {
+      const response = await apiCall(`/settings/license/revoke/${licenseId}`, {
+        method: 'POST'
+      });
+      return response.data;
+    } catch (error) {
+      // Fallback to Supabase
+      console.log(' Backend API unavailable, using Supabase fallback for revoke');
+      const { supabase } = await import('./supabase');
+      
+      const { error: updateError } = await supabase
+        .from('licenses')
+        .update({ status: 'revoked' })
+        .eq('id', licenseId);
+      
+      if (updateError) throw updateError;
+      return { success: true };
+    }
   }
 
   async updatePricing(prices: { monthly_price?: number; yearly_price?: number; lifetime_price?: number }): Promise<any> {
