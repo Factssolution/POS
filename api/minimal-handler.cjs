@@ -253,7 +253,7 @@ app.all('/api/v1/*', async (req, res) => {
       });
     }
 
-    // Wrap in expected response format
+    // Wrap in expected response format based on resource type
     let responseData = result.data || [];
     
     // Special handling for categories - map Supabase schema to frontend expected format
@@ -263,7 +263,7 @@ app.all('/api/v1/*', async (req, res) => {
         name: cat.name,
         description: cat.description || null,
         color: '#3B82F6', // Default color
-        icon: '📦', // Default icon
+        icon: '', // Default icon
         status: cat.is_active ? 'active' : 'inactive',
         sort_order: 0,
         product_count: 0,
@@ -277,11 +277,29 @@ app.all('/api/v1/*', async (req, res) => {
       responseData = result.data; // Already formatted
     }
     
-    res.json({
-      success: true,
-      data: Array.isArray(responseData) ? responseData : [responseData],
-      count: Array.isArray(responseData) ? responseData.length : 1
-    });
+    // Different resources expect different response formats
+    if (resource === 'categories') {
+      // Categories endpoint expects { categories: [], count: X }
+      res.json({
+        success: true,
+        categories: Array.isArray(responseData) ? responseData : [],
+        count: Array.isArray(responseData) ? responseData.length : 0
+      });
+    } else if (resource === 'products') {
+      // Products endpoint expects { products: [], count: X }
+      res.json({
+        success: true,
+        products: Array.isArray(responseData) ? responseData : [],
+        count: Array.isArray(responseData) ? responseData.length : 0
+      });
+    } else {
+      // Generic format for other resources
+      res.json({
+        success: true,
+        data: Array.isArray(responseData) ? responseData : [responseData],
+        count: Array.isArray(responseData) ? responseData.length : 1
+      });
+    }
   } catch (error) {
     console.error('API Proxy Error:', error);
     res.status(500).json({
