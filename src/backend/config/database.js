@@ -34,6 +34,9 @@ let sequelize;
 if (process.env.DB_HOST && process.env.DB_USER) {
   console.log(`✅ Database: ${process.env.DB_HOST}:${process.env.DB_PORT || 5432}`);
   
+  // Disable SSL for local development, enable for Supabase/production
+  const isLocalhost = process.env.DB_HOST === 'localhost' || process.env.DB_HOST === '127.0.0.1';
+  
   sequelize = new Sequelize(
     process.env.DB_NAME || 'postgres',
     process.env.DB_USER || 'postgres',
@@ -43,7 +46,7 @@ if (process.env.DB_HOST && process.env.DB_USER) {
       port: parseInt(process.env.DB_PORT) || 5432,
       dialect: 'postgres',
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
-      dialectOptions: {
+      dialectOptions: isLocalhost ? {} : {
         ssl: {
           require: true,
           rejectUnauthorized: false

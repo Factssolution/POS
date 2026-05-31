@@ -43,6 +43,30 @@ const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   return data;
 };
 
+// Public API calls (no auth required)
+const publicApiCall = async (endpoint: string, options: RequestInit = {}) => {
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  const config: RequestInit = {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers
+    }
+  };
+
+  const response = await fetch(url, config);
+  const data = await response.json();
+
+  if (!response.ok) {
+    const errorMessage = data.message || `API request failed with status ${response.status}`;
+    console.error(`API Error [${response.status}]:`, errorMessage);
+    throw new Error(errorMessage);
+  }
+
+  return data;
+};
+
 export interface User {
   id: number;
   name: string;
@@ -970,6 +994,74 @@ class APIService {
       body: JSON.stringify(prices)
     });
     return response.data;
+  }
+
+  // ========================================
+  // BLOB Storage API Methods (Images, Logos, Documents)
+  // ========================================
+
+  /**
+   * Upload image to database BLOB storage
+   * @param formData - FormData with file, type, and name
+   * @returns blob_id, url, compression info
+   */
+  async uploadBlob(formData: FormData): Promise<any> {
+    return apiCall('/blobs/upload', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  /**
+   * Get blob URL for direct image access
+   * @param blobId - UUID of the blob
+   * @returns Full URL to the image
+   */
+  getBlobUrl(blobId: string): string {
+    return `${API_BASE_URL}/blobs/${blobId}`;
+  }
+
+  /**
+   * Get image as base64 data URL
+   * @param blobId - UUID of the blob
+   * @returns Base64 data URL (data:image/webp;base64,...)
+   */
+  async getBlobAsBase64(blobId: string): Promise<string> {
+    const response = await apiCall(`/blobs/${blobId}/base64`);
+    return response.data;
+  }
+
+  /**
+   * Delete blob from database
+   * @param blobId - UUID of the blob to delete
+   */
+  async deleteBlob(blobId: string): Promise<void> {
+    return apiCall(`/blobs/${blobId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  /**
+   * Get storage usage statistics
+   * @returns used_mb, limit_mb, remaining_mb, percentage, total_files
+   */
+  async getBlobUsage(): Promise<any> {
+    return apiCall('/blobs/usage');
+  }
+
+  /**
+   * List all blobs (admin function)
+   * @param params - Optional filters (type, page, limit)
+   * @returns Paginated list of blobs
+   */
+  async listBlobs(params?: { type?: string; page?: number; limit?: number }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.type) queryParams.append('type', params.type);
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    
+    const queryString = queryParams.toString();
+    return apiCall(`/blobs${queryString ? '?' + queryString : ''}`);
   }
 }
 

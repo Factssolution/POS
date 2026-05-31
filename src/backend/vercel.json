@@ -1,15 +1,27 @@
 {
   "version": 2,
+  "name": "pos-system-api",
   "builds": [
     {
-      "src": "api/vercel-handler.js",
+      "src": "api/index.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/health",
+      "dest": "/api/index.js"
+    },
+    {
       "src": "/(.*)",
-      "dest": "api/vercel-handler.js"
+      "dest": "/api/index.js"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }

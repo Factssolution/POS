@@ -20,9 +20,12 @@ const backupRoutes = require('./routes/backups');
 const userRoutes = require('./routes/users');  // New user management routes
 const expenseRoutes = require('./routes/expenses');  // Expense management routes
 const licenseRoutes = require('./routes/licenses');  // License management routes
+const blobRoutes = require('./routes/blobs');  // BLOB storage routes (images, logos, documents)
+const tenantRoutes = require('./routes/tenants');  // Multi-tenant management routes
 
 // Import middleware
 const licenseValidator = require('./middleware/licenseValidator');
+const { attachTenant } = require('./middleware/tenant');  // Multi-tenant middleware
 
 const app = express();
 
@@ -67,6 +70,9 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/v1/auth', authRoutes);
 
+// Attach tenant context to all authenticated requests
+app.use('/api/v1', attachTenant);
+
 // Apply license validation AFTER auth but BEFORE other routes
 app.use('/api/v1', licenseValidator);
 
@@ -84,6 +90,8 @@ app.use('/api/v1/categories', categoryRoutes);
 app.use('/api/v1/users', userRoutes);  // User management routes
 app.use('/api/v1/expenses', expenseRoutes);  // Expense management routes
 app.use('/api/v1/settings/license', licenseRoutes);  // License routes (AFTER settings)
+app.use('/api/v1/blobs', blobRoutes);  // BLOB storage routes (images, logos, documents)
+app.use('/api/v1/tenants', tenantRoutes);  // Multi-tenant management routes (Super Admin only)
 
 // Health check endpoint
 app.get('/health', (req, res) => {
