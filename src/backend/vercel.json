@@ -1,6 +1,7 @@
 {
   "version": 2,
   "name": "pos-system-api",
+  "alias": "pos-api-zayqa.vercel.app",
   "builds": [
     {
       "src": "server.js",
