@@ -5,7 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
-import { auth } from '../services/supabase';
+import { api } from '../services/api';
 
 interface User {
   id: number;
@@ -55,24 +55,18 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
     setIsLoading(true);
 
     try {
-      // Use Supabase Auth directly
-      const { user, session } = await auth.login(formData.email, formData.password);
+      // Use backend API for login (NOT Supabase Auth)
+      const { user, token } = await api.login(formData.email, formData.password);
       
-      if (!user || !session) {
+      if (!user || !token) {
         toast.error('Login failed. Please try again.');
         return;
       }
       
-      // Get user profile from metadata or use defaults
-      const userData = {
-        id: user.id,
-        name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-        email: user.email || '',
-        role: user.user_metadata?.role || 'cashier'
-      };
+      console.log('✅ Login successful:', user.email, 'Role:', user.role);
       
-      // Pass user and Supabase session token to parent component
-      onLogin(userData as any, session.access_token);
+      // Pass user and backend JWT token to parent component
+      onLogin(user, token);
       
       toast.success('Login successful!');
       
@@ -81,14 +75,18 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
       console.error('Login failed:', error.message);
       
       // Provide specific error messages
-      if (error.message.includes('Invalid login credentials')) {
+      if (error.message.includes('Invalid email or password')) {
         toast.error('Invalid email or password. Please check your credentials.');
-      } else if (error.message.includes('Email not confirmed')) {
-        toast.error('Please verify your email address before logging in.');
-      } else if (error.message.includes('Too many requests')) {
-        toast.error('Too many login attempts. Please try again later.');
+      } else if (error.message.includes('account has been deactivated')) {
+        toast.error('Your account has been deactivated. Please contact administrator.');
+      } else if (error.message.includes('Trial period has expired')) {
+        toast.error('Trial period has expired. Please activate your license.');
+      } else if (error.message.includes('License is not active')) {
+        toast.error('System license is not active. Please contact administrator.');
+      } else if (error.message.includes('License has expired')) {
+        toast.error('License has expired. Please contact administrator to renew.');
       } else {
-        toast.error('Login failed. Please try again.');
+        toast.error(error.message || 'Login failed. Please try again.');
       }
     } finally {
       setIsLoading(false);

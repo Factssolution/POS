@@ -23,9 +23,31 @@ exports.getAllSuppliers = async (req, res) => {
 
       const currentBalance = parseFloat(s.opening_balance) + totalCredit - totalDebit;
 
+      const supplierData = s.toJSON();
+      
+      console.log('🔍 Supplier Debug (ID:', s.id, '):');
+      console.log('  supplierData.created_at:', supplierData.created_at);
+      console.log('  s.created_at:', s.created_at);
+      console.log('  s.dataValues.created_at:', s.dataValues.created_at);
+      
+      // Explicitly convert dates to ISO strings to ensure proper JSON serialization
+      const createdAt = supplierData.created_at || s.created_at || s.dataValues.created_at;
+      const updatedAt = supplierData.updated_at || s.updated_at || s.dataValues.updated_at;
+      
+      console.log('  Final createdAt:', createdAt);
+      console.log('  Is Date?', createdAt instanceof Date);
+      
       return {
-        ...s.toJSON(),
-        opening_balance: parseFloat(s.opening_balance),
+        id: supplierData.id,
+        name: supplierData.name,
+        contact: supplierData.contact,
+        email: supplierData.email || null,
+        address: supplierData.address || null,
+        gst_number: supplierData.gst_number || null,
+        opening_balance: parseFloat(supplierData.opening_balance),
+        status: supplierData.status,
+        created_at: createdAt ? (createdAt instanceof Date ? createdAt.toISOString() : createdAt) : null,
+        updated_at: updatedAt ? (updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt) : null,
         totalCredit: parseFloat(totalCredit),
         totalDebit: parseFloat(totalDebit),
         currentBalance: parseFloat(currentBalance)
@@ -80,12 +102,25 @@ exports.getSupplierById = async (req, res) => {
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
     const currentBalance = parseFloat(supplier.opening_balance) + (totalCredit - totalDebit);
+    const supplierData = supplier.toJSON();
+    
+    // Explicitly convert dates to ISO strings
+    const createdAt = supplierData.created_at || supplier.created_at;
+    const updatedAt = supplierData.updated_at || supplier.updated_at;
 
     res.json({
       success: true,
       data: {
-        ...supplier.toJSON(),
-        opening_balance: parseFloat(supplier.opening_balance),
+        id: supplierData.id,
+        name: supplierData.name,
+        contact: supplierData.contact,
+        email: supplierData.email || null,
+        address: supplierData.address || null,
+        gst_number: supplierData.gst_number || null,
+        opening_balance: parseFloat(supplierData.opening_balance),
+        status: supplierData.status,
+        created_at: createdAt ? (createdAt instanceof Date ? createdAt.toISOString() : createdAt) : null,
+        updated_at: updatedAt ? (updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt) : null,
         currentBalance: parseFloat(currentBalance)
       }
     });
@@ -102,13 +137,26 @@ exports.getSupplierById = async (req, res) => {
 exports.createSupplier = async (req, res) => {
   try {
     const supplier = await Supplier.create(req.body);
+    const supplierData = supplier.toJSON();
+    
+    // Explicitly convert dates to ISO strings
+    const createdAt = supplierData.created_at || supplier.created_at;
+    const updatedAt = supplierData.updated_at || supplier.updated_at;
 
     res.status(201).json({
       success: true,
       message: 'Supplier created successfully',
       data: {
-        ...supplier.toJSON(),
-        opening_balance: parseFloat(supplier.opening_balance)
+        id: supplierData.id,
+        name: supplierData.name,
+        contact: supplierData.contact,
+        email: supplierData.email || null,
+        address: supplierData.address || null,
+        gst_number: supplierData.gst_number || null,
+        opening_balance: parseFloat(supplierData.opening_balance),
+        status: supplierData.status,
+        created_at: createdAt ? (createdAt instanceof Date ? createdAt.toISOString() : createdAt) : null,
+        updated_at: updatedAt ? (updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt) : null
       }
     });
   } catch (error) {
@@ -134,13 +182,26 @@ exports.updateSupplier = async (req, res) => {
     }
 
     await supplier.update(req.body);
+    const supplierData = supplier.toJSON();
+    
+    // Explicitly convert dates to ISO strings
+    const createdAt = supplierData.created_at || supplier.created_at;
+    const updatedAt = supplierData.updated_at || supplier.updated_at;
 
     res.json({
       success: true,
       message: 'Supplier updated successfully',
       data: {
-        ...supplier.toJSON(),
-        opening_balance: parseFloat(supplier.opening_balance)
+        id: supplierData.id,
+        name: supplierData.name,
+        contact: supplierData.contact,
+        email: supplierData.email || null,
+        address: supplierData.address || null,
+        gst_number: supplierData.gst_number || null,
+        opening_balance: parseFloat(supplierData.opening_balance),
+        status: supplierData.status,
+        created_at: createdAt ? (createdAt instanceof Date ? createdAt.toISOString() : createdAt) : null,
+        updated_at: updatedAt ? (updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt) : null
       }
     });
   } catch (error) {

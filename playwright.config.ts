@@ -9,7 +9,7 @@ export default defineConfig({
   reporter: [['html', { outputFolder: 'playwright-report' }], ['list']],
   
   use: {
-    baseURL: 'http://localhost:3001',
+    baseURL: 'https://pos-iota-sage.vercel.app',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -22,10 +22,11 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3001',
-    reuseExistingServer: true,
-    timeout: 120 * 1000,
-  },
+  // Temporarily disabled for production testing
+  // webServer: {
+  //   command: 'npm run dev',
+  //   url: 'http://localhost:3001',
+  //   reuseExistingServer: true,
+  //   timeout: 120 * 1000,
+  // },
 });

@@ -33,18 +33,18 @@ import SuperAdminDashboard from './components/SuperAdminDashboard';
 import { toast, Toaster } from 'sonner';
 
 const menuItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: BarChart3, component: Dashboard, roles: ['Admin', 'Manager', 'Cashier', 'super_admin'] },
-  { id: 'super-admin', label: 'Super Admin', icon: Shield, component: SuperAdminDashboard, roles: ['super_admin'] },
-  { id: 'pos', label: 'POS System', icon: ShoppingCart, component: POSSystem, roles: ['Admin', 'Manager', 'Cashier', 'super_admin'] },
-  { id: 'products', label: 'Add Items', icon: Package, component: ProductManagement, roles: ['Admin', 'Manager', 'super_admin'] },
-  { id: 'categories', label: 'Categories', icon: FolderTree, component: CategoryManagement, roles: ['Admin', 'Manager', 'super_admin'] },
-  { id: 'employees', label: 'Employees', icon: Users, component: EmployeeManagement, roles: ['Admin', 'Manager', 'super_admin'] },
-  { id: 'suppliers', label: 'Suppliers', icon: Truck, component: SupplierManagement, roles: ['Admin', 'Manager', 'super_admin'] },
-  { id: 'expenses', label: 'Expenses', icon: Wallet, component: ExpenseManagement, roles: ['Admin', 'Manager', 'super_admin'] },
-  { id: 'credit-debit', label: 'Credit & Debit', icon: CreditCard, component: CreditDebit, roles: ['Admin', 'Manager', 'super_admin'] },
-  { id: 'reports', label: 'Reports', icon: FileText, component: Reports, roles: ['Admin', 'Manager', 'super_admin'] },
-  { id: 'customer-reports', label: 'Customer Reports', icon: Users, component: CustomerReports, roles: ['Admin', 'Manager', 'super_admin'] },
-  { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage, roles: ['Admin', 'super_admin'] },
+  { id: 'dashboard', label: 'Dashboard', icon: BarChart3, component: Dashboard, roles: ['Admin', 'Manager', 'Cashier', 'Super Admin'] },
+  { id: 'super-admin', label: 'Super Admin', icon: Shield, component: SuperAdminDashboard, roles: ['Super Admin'] },
+  { id: 'pos', label: 'POS System', icon: ShoppingCart, component: POSSystem, roles: ['Admin', 'Manager', 'Cashier', 'Super Admin'] },
+  { id: 'products', label: 'Add Items', icon: Package, component: ProductManagement, roles: ['Admin', 'Manager', 'Super Admin'] },
+  { id: 'categories', label: 'Categories', icon: FolderTree, component: CategoryManagement, roles: ['Admin', 'Manager', 'Super Admin'] },
+  { id: 'employees', label: 'Employees', icon: Users, component: EmployeeManagement, roles: ['Admin', 'Manager', 'Super Admin'] },
+  { id: 'suppliers', label: 'Suppliers', icon: Truck, component: SupplierManagement, roles: ['Admin', 'Manager', 'Super Admin'] },
+  { id: 'expenses', label: 'Expenses', icon: Wallet, component: ExpenseManagement, roles: ['Admin', 'Manager', 'Super Admin'] },
+  { id: 'credit-debit', label: 'Credit & Debit', icon: CreditCard, component: CreditDebit, roles: ['Admin', 'Manager', 'Super Admin'] },
+  { id: 'reports', label: 'Reports', icon: FileText, component: Reports, roles: ['Admin', 'Manager', 'Super Admin'] },
+  { id: 'customer-reports', label: 'Customer Reports', icon: Users, component: CustomerReports, roles: ['Admin', 'Manager', 'Super Admin'] },
+  { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage, roles: ['Admin', 'Super Admin'] },
 ];
 
 interface User {
@@ -108,6 +108,17 @@ export default function App() {
     toast.success('Logged out successfully');
   };
 
+  // Auto-redirect super_admin to Super Admin dashboard on first load
+  useEffect(() => {
+    const userRole = currentUser?.role;
+    const isSuperAdmin = userRole === 'Super Admin' || userRole === 'super_admin';
+    
+    if (isSuperAdmin && activeTab === 'dashboard' && isAuthenticated) {
+      console.log('🔵 Auto-redirecting Super Admin to Super Admin Dashboard');
+      setActiveTab('super-admin');
+    }
+  }, [currentUser?.role, isAuthenticated, activeTab]);
+
   // Check if this is the report preview route
   if (window.location.pathname === '/report-preview' || window.location.hash === '#/report-preview') {
     return <ReportPreview />;
@@ -125,29 +136,27 @@ export default function App() {
     );
   }
 
-  // Auto-redirect super_admin to Super Admin dashboard on first load
-  useEffect(() => {
-    if (currentUser?.role === 'super_admin' && activeTab === 'dashboard' && isAuthenticated) {
-      console.log(' Auto-redirecting Super Admin to Super Admin Dashboard');
-      setActiveTab('super-admin');
-    }
-  }, [currentUser?.role, isAuthenticated]);
-
   // Show login screen if not authenticated
   if (!isAuthenticated) {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
   // Filter menu items based on user role
-  console.log(' Menu Filter Debug:', {
+  console.log('🔍 Menu Filter Debug:', {
     currentUserRole: currentUser?.role,
+    isAuthenticated,
     totalMenus: menuItems.length,
-    menuItemsWithSuperAdmin: menuItems.filter(m => m.roles.includes('super_admin')).length
+    menuItemsWithSuperAdmin: menuItems.filter(m => m.roles.includes('Super Admin') || m.roles.includes('super_admin')).length
   });
     
-  const availableMenuItems = menuItems.filter(item =>
-    currentUser && item.roles.includes(currentUser.role)
-  );
+  const availableMenuItems = menuItems.filter(item => {
+    if (!currentUser) return false;
+    const userRole = currentUser.role;
+    // Support both role formats: 'Super Admin' and 'super_admin'
+    return item.roles.includes(userRole) || 
+           (userRole === 'Super Admin' && item.roles.includes('super_admin')) ||
+           (userRole === 'super_admin' && item.roles.includes('Super Admin'));
+  });
     
   console.log('✅ Available Menus for Role:', {
     role: currentUser?.role,

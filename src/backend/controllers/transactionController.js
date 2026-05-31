@@ -27,8 +27,7 @@ exports.getAllTransactions = async (req, res) => {
         {
           model: Supplier,
           as: 'supplier',
-          attributes: ['id', 'name', 'opening_balance']
-          // phone removed - may not exist in Supplier model
+          attributes: ['id', 'name', 'contact', 'email', 'opening_balance', 'status']
         },
         {
           model: User,

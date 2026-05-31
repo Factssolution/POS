@@ -47,6 +47,8 @@ const Supplier = sequelize.define('Supplier', {
 }, {
   tableName: 'suppliers',
   timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
   indexes: [
     { fields: ['status'] }
   ]

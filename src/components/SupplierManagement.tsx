@@ -34,12 +34,49 @@ export default function SupplierManagement() {
     try {
       setLoading(true);
       const data = await api.getSuppliers();
+      console.log('📊 Suppliers API Response:', data);
+      if (data && data.length > 0) {
+        console.log('📊 First supplier:', data[0]);
+        console.log('📊 First supplier created_at:', data[0].created_at);
+      }
       setSuppliers(data || []);
     } catch (error: any) {
       console.error('Load suppliers error:', error);
       toast.error('Failed to load suppliers');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper function to format dates safely
+  const formatDate = (dateString: string | null | undefined): string => {
+    console.log('📅 formatDate called with:', dateString, 'type:', typeof dateString);
+    
+    if (!dateString) {
+      console.log('📅 No date string, returning N/A');
+      return 'N/A';
+    }
+    
+    try {
+      const date = new Date(dateString);
+      console.log('📅 Parsed date:', date, 'Valid:', !isNaN(date.getTime()));
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.warn('❌ Invalid date:', dateString);
+        return 'N/A';
+      }
+      
+      const formatted = date.toLocaleDateString('en-PK', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+      console.log('✅ Formatted date:', formatted);
+      return formatted;
+    } catch (error) {
+      console.error('❌ Date formatting error:', error, dateString);
+      return 'N/A';
     }
   };
 
@@ -352,7 +389,7 @@ export default function SupplierManagement() {
                       {supplier.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{new Date(supplier.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>{formatDate(supplier.created_at)}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button

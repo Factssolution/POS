@@ -72,6 +72,8 @@ const Order = sequelize.define('Order', {
 }, {
   tableName: 'orders',
   timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
   indexes: [
     { fields: ['token_number'] },
     { fields: ['created_at'] },

@@ -50,6 +50,110 @@ const defaultFormData: CategoryFormData = {
   sort_order: 0
 };
 
+// Category Form Component - Defined OUTSIDE to prevent re-render focus loss
+const CategoryForm = ({ 
+  formData, 
+  setFormData, 
+  onSubmit,
+  onCancel,
+  submitting, 
+  isEdit 
+}: { 
+  formData: CategoryFormData;
+  setFormData: (data: CategoryFormData) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+  submitting: boolean;
+  isEdit: boolean;
+}) => (
+  <div className="space-y-4">
+    <div className="space-y-2">
+      <Label htmlFor="name">Category Name *</Label>
+      <Input
+        id="name"
+        placeholder="Enter category name"
+        value={formData.name}
+        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+        required
+        autoComplete="off"
+      />
+    </div>
+
+    <div className="space-y-2">
+      <Label htmlFor="description">Description</Label>
+      <Textarea
+        id="description"
+        placeholder="Enter category description (optional)"
+        value={formData.description}
+        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        rows={3}
+        autoComplete="off"
+      />
+    </div>
+
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <Label htmlFor="color">Color</Label>
+        <div className="flex gap-2">
+          <Input
+            id="color"
+            type="color"
+            value={formData.color}
+            onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+            className="w-16 h-10 p-1"
+          />
+          <Input
+            value={formData.color}
+            onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+            placeholder="#3b82f6"
+            className="flex-1"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="sort_order">Sort Order</Label>
+        <Input
+          id="sort_order"
+          type="number"
+          value={formData.sort_order}
+          onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
+          min="0"
+        />
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <Label>Status</Label>
+      <Select
+        value={formData.status}
+        onValueChange={(value: 'active' | 'inactive') => setFormData({ ...formData, status: value })}
+      >
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="active">Active</SelectItem>
+          <SelectItem value="inactive">Inactive</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+
+    <DialogFooter>
+      <Button
+        variant="outline"
+        onClick={onCancel}
+        disabled={submitting}
+      >
+        Cancel
+      </Button>
+      <Button onClick={onSubmit} disabled={submitting}>
+        {submitting ? (isEdit ? 'Updating...' : 'Adding...') : (isEdit ? 'Update Category' : 'Add Category')}
+      </Button>
+    </DialogFooter>
+  </div>
+);
+
 export default function CategoryManagement() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -179,106 +283,6 @@ export default function CategoryManagement() {
     const matchesStatus = selectedStatus === 'all' || cat.status === selectedStatus;
     return matchesSearch && matchesStatus;
   });
-
-  // Category Form Component
-  const CategoryForm = ({ 
-    formData, 
-    setFormData, 
-    onSubmit, 
-    submitting, 
-    isEdit 
-  }: { 
-    formData: CategoryFormData;
-    setFormData: (data: CategoryFormData) => void;
-    onSubmit: () => void;
-    submitting: boolean;
-    isEdit: boolean;
-  }) => (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="name">Category Name *</Label>
-        <Input
-          id="name"
-          placeholder="Enter category name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          placeholder="Enter category description (optional)"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          rows={3}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="color">Color</Label>
-          <div className="flex gap-2">
-            <Input
-              id="color"
-              type="color"
-              value={formData.color}
-              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-              className="w-16 h-10 p-1"
-            />
-            <Input
-              value={formData.color}
-              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-              placeholder="#3b82f6"
-              className="flex-1"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="sort_order">Sort Order</Label>
-          <Input
-            id="sort_order"
-            type="number"
-            value={formData.sort_order}
-            onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
-            min="0"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Status</Label>
-        <Select
-          value={formData.status}
-          onValueChange={(value: 'active' | 'inactive') => setFormData({ ...formData, status: value })}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <DialogFooter>
-        <Button
-          variant="outline"
-          onClick={() => isEdit ? setShowEditDialog(false) : setShowAddDialog(false)}
-          disabled={submitting}
-        >
-          Cancel
-        </Button>
-        <Button onClick={onSubmit} disabled={submitting}>
-          {submitting ? (isEdit ? 'Updating...' : 'Adding...') : (isEdit ? 'Update Category' : 'Add Category')}
-        </Button>
-      </DialogFooter>
-    </div>
-  );
 
   if (loading) {
     return (
@@ -491,6 +495,7 @@ export default function CategoryManagement() {
             formData={formData}
             setFormData={setFormData}
             onSubmit={handleSubmitAdd}
+            onCancel={() => setShowAddDialog(false)}
             submitting={submitting}
             isEdit={false}
           />
@@ -510,6 +515,7 @@ export default function CategoryManagement() {
             formData={formData}
             setFormData={setFormData}
             onSubmit={handleSubmitEdit}
+            onCancel={() => setShowEditDialog(false)}
             submitting={submitting}
             isEdit={true}
           />

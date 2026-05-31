@@ -44,6 +44,15 @@ export default function CreditDebit() {
       const transactionsResponse = await api.getTransactions();
       console.log('✅ Transactions Loaded:', transactionsResponse.transactions?.length || 0, 'transactions');
       console.log('💳 Transactions Data:', transactionsResponse.transactions);
+      
+      // Debug: Check supplier data in transactions
+      if (transactionsResponse.transactions && transactionsResponse.transactions.length > 0) {
+        const firstTx = transactionsResponse.transactions[0];
+        console.log('🔍 First transaction supplier:', firstTx.supplier);
+        console.log('🔍 supplier keys:', firstTx.supplier ? Object.keys(firstTx.supplier) : 'No supplier');
+        console.log('🔍 supplier as any:', JSON.stringify(firstTx.supplier, null, 2));
+      }
+      
       setTransactions(transactionsResponse.transactions || []);
       
     } catch (error: any) {
@@ -387,7 +396,7 @@ export default function CreditDebit() {
                     <TableCell className="font-medium">
                       {transaction.supplier?.name || transaction.supplier_name || 'N/A'}
                     </TableCell>
-                    <TableCell>{transaction.supplier?.phone || 'N/A'}</TableCell>
+                    <TableCell>{transaction.supplier?.contact || transaction.supplier?.phone || 'N/A'}</TableCell>
                     <TableCell>
                       <Badge 
                         variant={transaction.type === 'credit' ? 'default' : 'destructive'}
