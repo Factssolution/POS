@@ -1,25 +1,69 @@
 // Supabase REST API adapter - replaces Sequelize on Vercel
 const supabase = require('./supabase');
 
+// Sequelize Op symbols
+const Op = {
+  in: Symbol('op.in'),
+  or: Symbol('op.or'),
+  and: Symbol('op.and'),
+  gt: Symbol('op.gt'),
+  gte: Symbol('op.gte'),
+  lt: Symbol('op.lt'),
+  lte: Symbol('op.lte'),
+  ne: Symbol('op.ne'),
+  like: Symbol('op.like'),
+  between: Symbol('op.between'),
+};
+
+// Helper to apply where clause to Supabase query
+function applyWhere(query, where) {
+  if (!where) return query;
+  
+  Object.keys(where).forEach(key => {
+    const val = where[key];
+    
+    if (val === null || val === undefined) {
+      query = query.is(key, null);
+    } else if (typeof val === 'object' && !Array.isArray(val)) {
+      // Handle operators like { [Op.in]: [...] }
+      if (val[Op.in]) {
+        query = query.in(key, val[Op.in]);
+      } else if (val[Op.or]) {
+        // OR handled separately
+      } else if (val[Op.gt]) {
+        query = query.gt(key, val[Op.gt]);
+      } else if (val[Op.gte]) {
+        query = query.gte(key, val[Op.gte]);
+      } else if (val[Op.lt]) {
+        query = query.lt(key, val[Op.lt]);
+      } else if (val[Op.lte]) {
+        query = query.lte(key, val[Op.lte]);
+      } else if (val[Op.ne]) {
+        query = query.neq(key, val[Op.ne]);
+      } else if (val[Op.like]) {
+        query = query.like(key, val[Op.like]);
+      } else if (val[Op.between]) {
+        query = query.gte(key, val[Op.between][0]).lte(key, val[Op.between][1]);
+      } else {
+        // Plain object - eq
+        query = query.eq(key, val);
+      }
+    } else {
+      // Simple equality
+      query = query.eq(key, val);
+    }
+  });
+  
+  return query;
+}
+
 // Generic model factory
 function createModel(tableName) {
   return {
     // Find all records
     findAll: async (options = {}) => {
       let query = supabase.from(tableName).select('*');
-      
-      if (options.where) {
-        Object.keys(options.where).forEach(key => {
-          const val = options.where[key];
-          if (val && val[Symbol.for('op')]) {
-            // Handle Sequelize operators
-            const op = val[Symbol.for('op')];
-            if (op === 'in') query = query.in(key, val.values);
-          } else {
-            query = query.eq(key, val);
-          }
-        });
-      }
+      query = applyWhere(query, options.where);
       
       if (options.limit) query = query.limit(options.limit);
       if (options.offset) query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
@@ -36,17 +80,7 @@ function createModel(tableName) {
     // Find one record
     findOne: async (options = {}) => {
       let query = supabase.from(tableName).select('*').limit(1);
-      
-      if (options.where) {
-        Object.keys(options.where).forEach(key => {
-          const val = options.where[key];
-          if (val && typeof val === 'object' && val[Symbol.for('op')] === 'in') {
-            query = query.in(key, val.values);
-          } else {
-            query = query.eq(key, val);
-          }
-        });
-      }
+      query = applyWhere(query, options.where);
       
       const { data, error } = await query;
       if (error) return null;
@@ -115,17 +149,7 @@ function createModel(tableName) {
     // Find and count all
     findAndCountAll: async (options = {}) => {
       let query = supabase.from(tableName).select('*');
-      
-      if (options.where) {
-        Object.keys(options.where).forEach(key => {
-          const val = options.where[key];
-          if (val && typeof val === 'object' && val[Symbol.for('op')] === 'in') {
-            query = query.in(key, val.values);
-          } else {
-            query = query.eq(key, val);
-          }
-        });
-      }
+      query = applyWhere(query, options.where);
       
       if (options.limit) query = query.limit(options.limit);
       if (options.offset) query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
@@ -138,11 +162,7 @@ function createModel(tableName) {
       if (error) throw new Error(error.message);
       
       const countQuery = supabase.from(tableName).select('*', { count: 'exact', head: true });
-      if (options.where) {
-        Object.keys(options.where).forEach(key => {
-          countQuery.eq(key, options.where[key]);
-        });
-      }
+      applyWhere(countQuery, options.where);
       const { count } = await countQuery;
       
       return { rows: data || [], count: count || 0 };
@@ -217,14 +237,6 @@ module.exports = {
   License: createModel('licenses'),
   AuditLog: createModel('audit_logs'),
   Tenant: createModel('tenants'),
-  Op: {
-    in: { [Symbol.for('op')]: 'in', values: null },
-  },
+  Expense: createModel('expenses'),
+  Op,
 };
-
-// Helper to create IN operator
-function createInOperator(values) {
-  return { [Symbol.for('op')]: 'in', values };
-}
-
-module.exports.Op.in = createInOperator;
