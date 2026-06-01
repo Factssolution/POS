@@ -106,6 +106,8 @@ exports.createCategory = async (req, res) => {
   try {
     const { name, description, color, icon, status, sort_order } = req.body;
 
+    console.log('📥 Creating category:', { name, description, color, icon, status, sort_order });
+
     // Validate required fields
     if (!name) {
       return res.status(400).json({
@@ -123,7 +125,7 @@ exports.createCategory = async (req, res) => {
       .limit(1);
     
     if (checkError) {
-      console.error('Supabase check error:', checkError);
+      console.error('❌ Supabase check error:', checkError);
       return res.status(500).json({
         success: false,
         message: 'Failed to check existing category',
@@ -138,28 +140,36 @@ exports.createCategory = async (req, res) => {
       });
     }
 
-    // Create category
+    // Create category (let Supabase generate UUID)
+    const categoryData = {
+      name: name.trim(),
+      description: description || null,
+      color: color || '#000000',
+      icon: icon || null,
+      status: status || 'active',
+      sort_order: sort_order || 0
+    };
+
+    console.log('💾 Inserting to Supabase:', categoryData);
+
     const { data: newCategory, error: createError } = await supabase
       .from('categories')
-      .insert({
-        name: name.trim(),
-        description: description || null,
-        color: color || '#000000',
-        icon: icon || null,
-        status: status || 'active',
-        sort_order: sort_order || 0
-      })
+      .insert(categoryData)
       .select()
       .single();
     
     if (createError) {
-      console.error('Supabase create error:', createError);
+      console.error('❌ Supabase create error:', createError);
+      console.error('Error details:', JSON.stringify(createError, null, 2));
       return res.status(500).json({
         success: false,
         message: 'Failed to create category',
-        error: createError.message
+        error: createError.message,
+        details: createError.details || createError.hint
       });
     }
+
+    console.log('✅ Category created:', newCategory);
 
     res.status(201).json({
       success: true,
@@ -167,7 +177,7 @@ exports.createCategory = async (req, res) => {
       data: newCategory
     });
   } catch (error) {
-    console.error('Create category error:', error);
+    console.error('❌ Create category error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create category',
