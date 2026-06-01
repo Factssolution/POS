@@ -66,16 +66,20 @@ if (process.env.VERCEL === '1') {
   
   // Create minimal mock - just enough for model definitions
   // Models call sequelize.define() but never actually use the result on Vercel
+  const mockModel = {
+    findOne: async () => null,
+    findAll: async () => [],
+    create: async () => ({}),
+    update: async () => [0],
+    destroy: async () => 0,
+    count: async () => 0,
+    findByPk: async () => null,
+    sync: async () => {},
+  };
+  
   const mockSequelize = {
-    define: () => ({ 
-      findOne: async () => null,
-      findAll: async () => [],
-      create: async () => ({}),
-      update: async () => [0],
-      destroy: async () => 0,
-      sync: async () => {},
-      authenticate: async () => {}
-    }),
+    define: () => mockModel,
+    model: () => mockModel,
     authenticate: async () => {},
     sync: async () => {},
     close: async () => {}
