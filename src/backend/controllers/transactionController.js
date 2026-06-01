@@ -1,104 +1,55 @@
 const { Transaction, Supplier, User } = require('../models');
 const { Op } = require('sequelize');
+const supabase = require('../config/supabase');
 
 exports.getAllTransactions = async (req, res) => {
   try {
     const { supplier_id, type, startDate, endDate } = req.query;
     
-    const where = {};
+    // Use Supabase for Vercel deployment
+    let query = supabase
+      .from('transactions')
+      .select(`
+        *,
+        supplier:supplier_id (id, name, contact, email, opening_balance, status),
+        creator:user_id (id, name)
+      `)
+      .order('transaction_date', { ascending: true })
+      .order('transaction_time', { ascending: true })
+      .order('created_at', { ascending: true });
     
     if (supplier_id) {
-      where.supplier_id = supplier_id;
+      query = query.eq('supplier_id', supplier_id);
     }
     
     if (type) {
-      where.type = type;
+      query = query.eq('type', type);
     }
     
-    if (startDate && endDate) {
-      where.transaction_date = {
-        [Op.between]: [startDate, endDate]
-      };
+    if (startDate) {
+      query = query.gte('transaction_date', startDate);
+    }
+    
+    if (endDate) {
+      query = query.lte('transaction_date', endDate);
     }
 
-    const transactions = await Transaction.findAll({
-      where,
-      include: [
-        {
-          model: Supplier,
-          as: 'supplier',
-          attributes: ['id', 'name', 'contact', 'email', 'opening_balance', 'status']
-        },
-        {
-          model: User,
-          as: 'creator',
-          attributes: ['id', 'name']
-        }
-      ],
-      order: [['transaction_date', 'ASC'], ['transaction_time', 'ASC'], ['created_at', 'ASC']]  // ASC for correct running balance calculation
-    });
-
-    console.log(`📊 Processing ${transactions.length} transactions for running balance...`);
-
-    // Calculate running balance for EACH SUPPLIER individually
-    const supplierBalances = {};
+    const { data: transactions, error } = await query;
     
-    // Initialize all suppliers with their opening balances FIRST
-    const allSuppliers = new Set(transactions.map(t => t.supplier_id));
-    transactions.forEach(t => {
-      const supplierId = t.supplier_id;
-      if (!supplierBalances[supplierId]) {
-        const openingBalance = parseFloat(t.supplier?.opening_balance || 0);
-        supplierBalances[supplierId] = openingBalance;
-        console.log(`   Supplier ${t.supplier?.name} (ID: ${supplierId}): Opening Balance = Rs ${openingBalance}`);
-      }
-    });
-    
-    // Now calculate running balance in chronological order
-    const transactionsWithBalance = transactions.map(t => {
-      const supplierId = t.supplier_id;
-      const amount = parseFloat(t.amount);
-      
-      // Update THIS SUPPLIER'S running balance
-      if (t.type === 'credit') {
-        supplierBalances[supplierId] += amount;
-      } else if (t.type === 'debit') {
-        supplierBalances[supplierId] -= amount;
-      }
-      
-      const runningBalance = supplierBalances[supplierId];
-      
-      console.log(`   Transaction ${t.id}: ${t.supplier?.name} | ${t.type} Rs ${amount} | Running: Rs ${runningBalance}`);
-      
-      return {
-        ...t.toJSON(),
-        amount: amount,
-        running_balance: parseFloat(runningBalance.toFixed(2)),
-        supplier_opening_balance: parseFloat(t.supplier?.opening_balance || 0)
-      };
-    });
-
-    // Reverse to show newest first (DESC for display)
-    transactionsWithBalance.reverse();
-
-    // Calculate summary
-    const totalCredit = transactions
-      .filter(t => t.type === 'credit')
-      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    
-    const totalDebit = transactions
-      .filter(t => t.type === 'debit')
-      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    if (error) {
+      console.error('Supabase transactions query error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch transactions',
+        error: error.message
+      });
+    }
 
     res.json({
       success: true,
       data: {
-        transactions: transactionsWithBalance,
-        summary: {
-          totalCredit: parseFloat(totalCredit.toFixed(2)),
-          totalDebit: parseFloat(totalDebit.toFixed(2)),
-          netBalance: parseFloat((totalCredit - totalDebit).toFixed(2))
-        }
+        transactions: transactions || [],
+        count: (transactions || []).length
       }
     });
   } catch (error) {

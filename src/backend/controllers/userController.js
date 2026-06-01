@@ -1,20 +1,32 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+const supabase = require('../config/supabase');
 
 // GET /api/v1/users - Get all users
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.findAll({
-      attributes: { exclude: ['password'] }, // Don't send password hashes
-      order: [['id', 'ASC']]
-    });
+    // Use Supabase for Vercel deployment
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, name, email, phone, role, status, created_at, updated_at')
+      .order('id', { ascending: true });
+    
+    if (error) {
+      console.error('Supabase users query error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching users',
+        error: error.message
+      });
+    }
 
     res.json({
       success: true,
-      users,
-      count: users.length
+      users: users || [],
+      count: (users || []).length
     });
   } catch (error) {
+    console.error('Get users error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching users',

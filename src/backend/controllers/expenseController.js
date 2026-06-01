@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const Expense = require('../models/Expense');
 const User = require('../models/User');
 const Supplier = require('../models/Supplier');
+const supabase = require('../config/supabase');
 
 // Category labels for display
 const CATEGORY_LABELS = {
@@ -37,107 +38,59 @@ exports.getExpenses = async (req, res) => {
       sortOrder = 'DESC'
     } = req.query;
 
-    const where = {};
+    const offset = (page - 1) * limit;
 
-    // Date range filter
-    if (startDate && endDate) {
-      const endDateObj = new Date(endDate);
-      endDateObj.setDate(endDateObj.getDate() + 1);
-      where.expense_date = {
-        [Op.between]: [startDate, endDateObj.toISOString().split('T')[0]]
-      };
-    }
-
-    // Category filter
-    if (category && category !== 'all') {
-      where.category = category;
-    }
-
-    // Status filter
-    if (status && status !== 'all') {
-      where.status = status;
-    }
-
-    // Payment method filter
-    if (paymentMethod && paymentMethod !== 'all') {
-      where.payment_method = paymentMethod;
-    }
-
-    // Search filter
-    if (search) {
-      where[Op.or] = [
-        { title: { [Op.iLike]: `%${search}%` } },
-        { description: { [Op.iLike]: `%${search}%` } },
-        { vendor_name: { [Op.iLike]: `%${search}%` } },
-        { receipt_number: { [Op.iLike]: `%${search}%` } }
-      ];
-    }
-
-    const offset = (parseInt(page) - 1) * parseInt(limit);
-
-    const { count, rows: expenses } = await Expense.findAndCountAll({
-      where,
-      include: [
-        {
-          model: User,
-          as: 'creator',
-          attributes: ['id', 'name', 'email']
-        },
-        {
-          model: Supplier,
-          as: 'supplier',
-          attributes: ['id', 'name', 'contact']
-        }
-      ],
-      order: [[sortBy, sortOrder]],
-      limit: parseInt(limit),
-      offset
-    });
-
-    // Calculate summary statistics
-    const totalExpenses = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+    // Use Supabase for Vercel deployment
+    let query = supabase
+      .from('expenses')
+      .select('*, creator:created_by (id, name)', { count: 'exact' })
+      .order(sortBy || 'expense_date', { ascending: sortOrder === 'ASC' })
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
     
-    const expensesByCategory = {};
-    expenses.forEach(exp => {
-      if (!expensesByCategory[exp.category]) {
-        expensesByCategory[exp.category] = {
-          category: exp.category,
-          label: CATEGORY_LABELS[exp.category] || exp.category,
-          count: 0,
-          total: 0
-        };
-      }
-      expensesByCategory[exp.category].count++;
-      expensesByCategory[exp.category].total += parseFloat(exp.amount);
-    });
+    if (startDate) {
+      query = query.gte('expense_date', startDate);
+    }
+    
+    if (endDate) {
+      query = query.lte('expense_date', endDate);
+    }
+    
+    if (category) {
+      query = query.eq('category', category);
+    }
+    
+    if (status) {
+      query = query.eq('status', status);
+    }
+    
+    if (paymentMethod) {
+      query = query.eq('payment_method', paymentMethod);
+    }
+    
+    if (search) {
+      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,vendor_name.ilike.%${search}%`);
+    }
 
-    const expensesByStatus = {
-      pending: 0,
-      approved: 0,
-      rejected: 0
-    };
-    expenses.forEach(exp => {
-      if (expensesByStatus[exp.status] !== undefined) {
-        expensesByStatus[exp.status] += parseFloat(exp.amount);
-      }
-    });
+    const { data: expenses, error, count } = await query;
+    
+    if (error) {
+      console.error('Supabase expenses query error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch expenses',
+        error: error.message
+      });
+    }
 
     res.json({
       success: true,
       data: {
-        expenses: expenses.map(exp => ({
-          ...exp.toJSON(),
-          amount: parseFloat(exp.amount)
-        })),
-        total: count,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(count / parseInt(limit)),
-        summary: {
-          totalExpenses: parseFloat(totalExpenses.toFixed(2)),
-          expensesByCategory: Object.values(expensesByCategory),
-          expensesByStatus: expensesByStatus,
-          averageExpense: expenses.length > 0 ? parseFloat((totalExpenses / expenses.length).toFixed(2)) : 0
+        expenses: expenses || [],
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil((count || 0) / limit),
+          totalItems: count || 0,
+          itemsPerPage: parseInt(limit)
         }
       }
     });
