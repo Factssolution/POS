@@ -1,5 +1,4 @@
 // Supabase REST API adapter - replaces Sequelize on Vercel
-const supabase = require('./supabase');
 
 // Sequelize Op symbols
 const Op = {
@@ -59,10 +58,18 @@ function applyWhere(query, where) {
 
 // Generic model factory
 function createModel(tableName) {
+  let _supabase = null;
+  const getSupabase = () => {
+    if (!_supabase) {
+      _supabase = require('./supabase');
+    }
+    return _supabase;
+  };
+  
   return {
     // Find all records
     findAll: async (options = {}) => {
-      let query = supabase.from(tableName).select('*');
+      let query = getSupabase().from(tableName).select('*');
       query = applyWhere(query, options.where);
       
       if (options.limit) query = query.limit(options.limit);
@@ -79,7 +86,7 @@ function createModel(tableName) {
 
     // Find one record
     findOne: async (options = {}) => {
-      let query = supabase.from(tableName).select('*').limit(1);
+      let query = getSupabase().from(tableName).select('*').limit(1);
       query = applyWhere(query, options.where);
       
       const { data, error } = await query;
@@ -89,21 +96,21 @@ function createModel(tableName) {
 
     // Find by primary key
     findByPk: async (id) => {
-      const { data, error } = await supabase.from(tableName).select('*').eq('id', id).single();
+      const { data, error } = await getSupabase().from(tableName).select('*').eq('id', id).single();
       if (error) return null;
       return data;
     },
 
     // Create record
     create: async (data) => {
-      const { data: result, error } = await supabase.from(tableName).insert(data).select().single();
+      const { data: result, error } = await getSupabase().from(tableName).insert(data).select().single();
       if (error) throw new Error(error.message);
       return result;
     },
 
     // Update records
     update: async (data, options = {}) => {
-      let query = supabase.from(tableName).update(data);
+      let query = getSupabase().from(tableName).update(data);
       
       if (options.where) {
         Object.keys(options.where).forEach(key => {
@@ -118,7 +125,7 @@ function createModel(tableName) {
 
     // Delete records
     destroy: async (options = {}) => {
-      let query = supabase.from(tableName).delete();
+      let query = getSupabase().from(tableName).delete();
       
       if (options.where) {
         Object.keys(options.where).forEach(key => {
@@ -133,7 +140,7 @@ function createModel(tableName) {
 
     // Count records
     count: async (options = {}) => {
-      let query = supabase.from(tableName).select('*', { count: 'exact', head: true });
+      let query = getSupabase().from(tableName).select('*', { count: 'exact', head: true });
       
       if (options.where) {
         Object.keys(options.where).forEach(key => {
@@ -148,7 +155,7 @@ function createModel(tableName) {
 
     // Find and count all
     findAndCountAll: async (options = {}) => {
-      let query = supabase.from(tableName).select('*');
+      let query = getSupabase().from(tableName).select('*');
       query = applyWhere(query, options.where);
       
       if (options.limit) query = query.limit(options.limit);
@@ -161,7 +168,7 @@ function createModel(tableName) {
       const { data, error } = await query;
       if (error) throw new Error(error.message);
       
-      const countQuery = supabase.from(tableName).select('*', { count: 'exact', head: true });
+      const countQuery = getSupabase().from(tableName).select('*', { count: 'exact', head: true });
       applyWhere(countQuery, options.where);
       const { count } = await countQuery;
       
@@ -170,13 +177,13 @@ function createModel(tableName) {
 
     // Bulk create
     bulkCreate: async (records, options = {}) => {
-      const { data: result, error } = await supabase.from(tableName).insert(records).select();
+      const { data: result, error } = await getSupabase().from(tableName).insert(records).select();
       if (error) {
         if (options.updateOnDuplicate) {
           // Handle upsert
           const results = [];
           for (const record of records) {
-            const { data, error: upsertErr } = await supabase.from(tableName).upsert(record).select();
+            const { data, error: upsertErr } = await getSupabase().from(tableName).upsert(record).select();
             if (!upsertErr && data) results.push(data[0]);
           }
           return results;
@@ -188,7 +195,7 @@ function createModel(tableName) {
 
     // Upsert
     upsert: async (data) => {
-      const { data: result, error } = await supabase.from(tableName).upsert(data).select().single();
+      const { data: result, error } = await getSupabase().from(tableName).upsert(data).select().single();
       if (error) throw new Error(error.message);
       return result;
     },
