@@ -1,6 +1,7 @@
 const { User } = require('../models');
 const jwt = require('jsonwebtoken');
 const jwtConfig = require('../config/jwt');
+const supabase = require('../config/supabase');
 
 // Generate token function
 const generateToken = (payload) => {
@@ -9,20 +10,26 @@ const generateToken = (payload) => {
   });
 };
 
-// Login
+// Login - Using Supabase REST API
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ where: { email } });
+    // Query users via Supabase REST API (bypasses DNS issues)
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
 
-    if (!user) {
+    if (error || !users) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
       });
     }
+
+    const user = users;
 
     // Check if user is active
     if (user.status === 'inactive') {
@@ -32,8 +39,9 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Compare password
-    const isPasswordValid = await user.comparePassword(password);
+    // Compare password using bcrypt
+    const bcrypt = require('bcryptjs');
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       return res.status(401).json({
