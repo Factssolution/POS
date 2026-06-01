@@ -1,16 +1,28 @@
 const { Settings } = require('../models');
 const auditController = require('./auditController');
 const { checkShopStatus, getDefaultShopHours } = require('../utils/tokenHelper');
+const supabase = require('../config/supabase');
 
 exports.getAllSettings = async (req, res) => {
   try {
-    const settings = await Settings.findAll({
-      order: [['setting_key', 'ASC']]
-    });
+    // Use Supabase for Vercel deployment
+    const { data: settings, error } = await supabase
+      .from('settings')
+      .select('*')
+      .order('setting_key', { ascending: true });
+    
+    if (error) {
+      console.error('Supabase settings query error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch settings',
+        error: error.message
+      });
+    }
 
     // Convert to key-value object
     const settingsObject = {};
-    settings.forEach(setting => {
+    (settings || []).forEach(setting => {
       settingsObject[setting.setting_key] = setting.setting_value;
     });
 

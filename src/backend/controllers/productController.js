@@ -1,56 +1,62 @@
 const { Product } = require('../models');
 const { Op } = require('sequelize');
+const supabase = require('../config/supabase');
 
 // Get all products
 exports.getAllProducts = async (req, res) => {
   try {
     const { status, category, search, page = 1, limit = 50 } = req.query;
     
-    const where = {};
+    const offset = (page - 1) * limit;
+
+    // Use Supabase for Vercel deployment
+    let query = supabase
+      .from('products')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
     
     if (status) {
-      where.status = status;
+      query = query.eq('status', status);
     }
     
     if (category) {
-      where.category = category;
+      query = query.eq('category', category);
     }
     
     if (search) {
-      where[Op.or] = [
-        { name: { [Op.like]: `%${search}%` } },
-        { barcode: { [Op.like]: `%${search}%` } }
-      ];
+      query = query.or(`name.ilike.%${search}%,barcode.ilike.%${search}%`);
     }
 
-    const offset = (page - 1) * limit;
-
-    const { count, rows } = await Product.findAndCountAll({
-      where,
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-      order: [['created_at', 'DESC']]
-    });
+    const { data: products, error, count } = await query;
+    
+    if (error) {
+      console.error('Supabase products query error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch products',
+        error: error.message
+      });
+    }
 
     res.json({
       success: true,
       data: {
-        products: rows.map(p => {
-          const productJson = p.toJSON();
+        products: (products || []).map(p => {
           // Ensure image_url is a full URL if it exists
-          if (productJson.image_url && !productJson.image_url.startsWith('http')) {
-            productJson.image_url = `http://localhost:${process.env.PORT || 5000}${productJson.image_url}`;
+          if (p.image_url && !p.image_url.startsWith('http')) {
+            p.image_url = `http://localhost:${process.env.PORT || 5000}${p.image_url}`;
           }
           return {
-            ...productJson,
+            ...p,
             price: parseFloat(p.price),
             cost_price: parseFloat(p.cost_price)
           };
         }),
         pagination: {
           currentPage: parseInt(page),
-          totalPages: Math.ceil(count / limit),
-          totalItems: count,
+          totalPages: Math.ceil((count || 0) / limit),
+          totalItems: count || 0,
           itemsPerPage: parseInt(limit)
         }
       }

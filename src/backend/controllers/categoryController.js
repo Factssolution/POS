@@ -1,36 +1,49 @@
 const { Category, Product } = require('../models');
 const { Op } = require('sequelize');
+const supabase = require('../config/supabase');
 
 // Get all categories
 exports.getAllCategories = async (req, res) => {
   try {
     const { status, search } = req.query;
     
-    const where = {};
+    // Use Supabase for Vercel deployment
+    let query = supabase
+      .from('categories')
+      .select('*', { count: 'exact' })
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true });
     
     if (status) {
-      where.status = status;
+      query = query.eq('status', status);
     }
     
     if (search) {
-      where.name = { [Op.like]: `%${search}%` };
+      query = query.ilike('name', `%${search}%`);
     }
 
-    const categories = await Category.findAll({
-      where,
-      order: [['sort_order', 'ASC'], ['name', 'ASC']]
-    });
+    const { data: categories, error, count } = await query;
+    
+    if (error) {
+      console.error('Supabase categories query error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch categories',
+        error: error.message
+      });
+    }
 
     // Get product count for each category
     const categoriesWithCount = await Promise.all(
-      categories.map(async (category) => {
-        const productCount = await Product.count({
-          where: { category: category.name }
-        });
+      (categories || []).map(async (category) => {
+        const { count: productCount } = await supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true })
+          .eq('category', category.name);
         
         return {
-          ...category.toJSON(),
-          product_count: productCount
+          ...category,
+          product_count: productCount || 0
         };
       })
     );

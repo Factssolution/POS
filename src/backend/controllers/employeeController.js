@@ -1,15 +1,27 @@
 const { Employee, User } = require('../models');
+const supabase = require('../config/supabase');
 
 exports.getAllEmployees = async (req, res) => {
   try {
-    const employees = await Employee.findAll({
-      order: [['created_at', 'DESC']]
-    });
+    // Use Supabase for Vercel deployment
+    const { data: employees, error, count } = await supabase
+      .from('employees')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Supabase employees query error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch employees',
+        error: error.message
+      });
+    }
 
     res.json({
       success: true,
       data: {
-        employees: employees.map(e => ({
+        employees: (employees || []).map(e => ({
           id: e.id,
           name: e.name,
           phone: e.phone,
@@ -20,7 +32,7 @@ exports.getAllEmployees = async (req, res) => {
           created_at: e.created_at,
           updated_at: e.updated_at
         })),
-        count: employees.length
+        count: count || (employees || []).length
       }
     });
   } catch (error) {

@@ -1,62 +1,62 @@
 const { Supplier, Transaction } = require('../models');
 const { Op } = require('sequelize');
+const supabase = require('../config/supabase');
 
 exports.getAllSuppliers = async (req, res) => {
   try {
-    const suppliers = await Supplier.findAll({
-      order: [['created_at', 'DESC']]
-    });
+    // Use Supabase for Vercel deployment
+    const { data: suppliers, error } = await supabase
+      .from('suppliers')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Supabase suppliers query error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch suppliers',
+        error: error.message
+      });
+    }
 
     // Calculate current balance for each supplier
-    const suppliersWithBalance = await Promise.all(suppliers.map(async (s) => {
-      const transactions = await Transaction.findAll({
-        where: { supplier_id: s.id }
-      });
+    const suppliersWithBalance = await Promise.all((suppliers || []).map(async (s) => {
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('supplier_id', s.id);
 
-      const totalCredit = transactions
+      const totalCredit = (transactions || [])
         .filter(t => t.type === 'credit')
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
       
-      const totalDebit = transactions
+      const totalDebit = (transactions || [])
         .filter(t => t.type === 'debit')
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
-      const currentBalance = parseFloat(s.opening_balance) + totalCredit - totalDebit;
-
-      const supplierData = s.toJSON();
-      
-      console.log('🔍 Supplier Debug (ID:', s.id, '):');
-      console.log('  supplierData.created_at:', supplierData.created_at);
-      console.log('  s.created_at:', s.created_at);
-      console.log('  s.dataValues.created_at:', s.dataValues.created_at);
-      
-      // Explicitly convert dates to ISO strings to ensure proper JSON serialization
-      const createdAt = supplierData.created_at || s.created_at || s.dataValues.created_at;
-      const updatedAt = supplierData.updated_at || s.updated_at || s.dataValues.updated_at;
-      
-      console.log('  Final createdAt:', createdAt);
-      console.log('  Is Date?', createdAt instanceof Date);
+      const currentBalance = parseFloat(s.opening_balance || 0) + totalCredit - totalDebit;
       
       return {
-        id: supplierData.id,
-        name: supplierData.name,
-        contact: supplierData.contact,
-        email: supplierData.email || null,
-        address: supplierData.address || null,
-        gst_number: supplierData.gst_number || null,
-        opening_balance: parseFloat(supplierData.opening_balance),
-        status: supplierData.status,
-        created_at: createdAt ? (createdAt instanceof Date ? createdAt.toISOString() : createdAt) : null,
-        updated_at: updatedAt ? (updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt) : null,
-        totalCredit: parseFloat(totalCredit),
-        totalDebit: parseFloat(totalDebit),
-        currentBalance: parseFloat(currentBalance)
+        id: s.id,
+        name: s.name,
+        contact: s.contact,
+        email: s.email || null,
+        address: s.address || null,
+        gst_number: s.gst_number || null,
+        opening_balance: parseFloat(s.opening_balance || 0),
+        status: s.status,
+        created_at: s.created_at,
+        updated_at: s.updated_at,
+        current_balance: currentBalance
       };
     }));
 
     res.json({
       success: true,
-      data: suppliersWithBalance
+      data: {
+        suppliers: suppliersWithBalance,
+        count: suppliersWithBalance.length
+      }
     });
   } catch (error) {
     console.error('Get suppliers error:', error);
