@@ -30,8 +30,28 @@ const resolveIPv4 = async (hostname) => {
 
 let sequelize;
 
-// Use direct Supabase connection (not pooler) with proper SSL configuration
-if (process.env.DB_HOST && process.env.DB_USER) {
+// Priority 1: Use DATABASE_URL if available (complete connection string)
+if (process.env.DATABASE_URL) {
+  console.log('✅ Using DATABASE_URL connection string');
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'postgres',
+    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    }
+  });
+}
+// Priority 2: Use individual DB_* variables
+else if (process.env.DB_HOST && process.env.DB_USER) {
   console.log(`✅ Database: ${process.env.DB_HOST}:${process.env.DB_PORT || 5432}`);
   
   // Disable SSL for local development, enable for Supabase/production
