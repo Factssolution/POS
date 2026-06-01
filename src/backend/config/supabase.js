@@ -11,7 +11,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABAS
 
 if (!supabaseKey) {
   console.error('❌ Missing Supabase keys! Set SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY');
-  process.exit(1);
+  throw new Error('Missing Supabase credentials');
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
