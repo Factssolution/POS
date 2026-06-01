@@ -3,7 +3,13 @@ const cors = require('cors');
 const morgan = require('morgan');
 require('dotenv').config();
 
-const sequelize = require('./config/database');
+// Load database (lazy - won't connect on Vercel)
+let sequelize;
+try {
+  sequelize = require('./config/database');
+} catch (err) {
+  console.warn('⚠️  Database not available:', err.message);
+}
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -143,16 +149,20 @@ const startServer = async () => {
       });
 
       // Test database connection (non-blocking)
-      try {
-        await sequelize.authenticate();
-        console.log('✅ Database connected successfully');
-        
-        // Sync database (create tables if not exist)
-        await sequelize.sync({ alter: false });
-        console.log('✅ Database synced');
-      } catch (dbError) {
-        console.error('⚠️  Database connection failed:', dbError.message);
-        console.log('⚠️  Server will continue running but database operations will fail');
+      if (sequelize && process.env.VERCEL !== '1') {
+        try {
+          await sequelize.authenticate();
+          console.log('✅ Database connected successfully');
+          
+          // Sync database (create tables if not exist)
+          await sequelize.sync({ alter: false });
+          console.log('✅ Database synced');
+        } catch (dbError) {
+          console.error('⚠️  Database connection failed:', dbError.message);
+          console.log('⚠️  Server will continue running but database operations will fail');
+        }
+      } else if (process.env.VERCEL === '1') {
+        console.log('ℹ️  Using Supabase REST API on Vercel (no direct DB connection)');
       }
     } catch (error) {
       console.error('❌ Failed to start server:', error);
