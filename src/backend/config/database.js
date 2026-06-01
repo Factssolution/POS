@@ -91,6 +91,12 @@ if (process.env.VERCEL === '1') {
   mockModel.beforeBulkDestroy = () => {};
   mockModel.addHook = () => {};
   
+  // Sequelize associations (no-op on Vercel)
+  mockModel.belongsTo = () => mockModel;
+  mockModel.hasMany = () => mockModel;
+  mockModel.hasOne = () => mockModel;
+  mockModel.belongsToMany = () => mockModel;
+  
   const mockSequelize = {
     define: () => mockModel,
     model: () => mockModel,
