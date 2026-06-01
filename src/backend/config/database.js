@@ -64,12 +64,13 @@ let sequelize = null;
 if (process.env.VERCEL === '1') {
   console.log('⏭️  Skipping database initialization on Vercel (using Supabase REST API)');
   
-  // Create mock Sequelize instance that models can use
+  // Create mock Sequelize instance using SQLite in-memory (no network calls)
   const { Sequelize } = require('sequelize');
-  const mockSequelize = new Sequelize('postgres://mock:mock@mock:5432/mock', {
-    dialect: 'postgres',
+  const mockSequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: ':memory:',
     logging: false,
-    // Don't actually connect - this is just for model definitions
+    // This is just for model definitions - no actual DB operations
   });
   
   module.exports = mockSequelize;
