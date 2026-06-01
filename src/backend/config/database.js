@@ -74,7 +74,7 @@ if (process.env.DATABASE_URL) {
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false, // Accept self-signed certs from pooler
+        rejectUnauthorized: false, // CRITICAL: Accept self-signed certs from Supabase pooler
         ca: supabaseCA || undefined
       }
     },
