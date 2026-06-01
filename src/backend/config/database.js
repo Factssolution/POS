@@ -3,6 +3,10 @@ const { Sequelize } = require('sequelize');
 // Explicitly load pg driver for PostgreSQL
 const pg = require('pg');
 
+// Load Supabase SSL Certificate
+const fs = require('fs');
+const path = require('path');
+
 // Configure pg to use IPv4 by resolving DNS ourselves
 const dns = require('dns').promises;
 
@@ -28,6 +32,32 @@ const resolveIPv4 = async (hostname) => {
   }
 };
 
+// Load Supabase CA certificate for SSL verification
+let supabaseCA = null;
+try {
+  // Try multiple possible paths for the certificate
+  const possiblePaths = [
+    path.join(__dirname, '..', '..', '..', 'prod-ca-2021.crt'),
+    path.join(process.cwd(), 'prod-ca-2021.crt'),
+    path.join(__dirname, 'prod-ca-2021.crt')
+  ];
+  
+  for (const certPath of possiblePaths) {
+    if (fs.existsSync(certPath)) {
+      supabaseCA = fs.readFileSync(certPath, 'utf8');
+      console.log('✅ Loaded Supabase CA certificate from:', certPath);
+      break;
+    }
+  }
+  
+  if (!supabaseCA && process.env.SUPABASE_CA_CERT) {
+    supabaseCA = process.env.SUPABASE_CA_CERT;
+    console.log('✅ Loaded Supabase CA from environment variable');
+  }
+} catch (err) {
+  console.warn('⚠️  Could not load Supabase CA certificate:', err.message);
+}
+
 let sequelize;
 
 // Priority 1: Use DATABASE_URL if available (complete connection string)
@@ -38,7 +68,11 @@ if (process.env.DATABASE_URL) {
     dialect: 'postgres',
     logging: console.log, // Enable logging to see errors
     dialectOptions: {
-      ssl: {
+      ssl: supabaseCA ? {
+        require: true,
+        ca: supabaseCA,
+        rejectUnauthorized: true
+      } : {
         require: true,
         rejectUnauthorized: false
       }
