@@ -60,18 +60,26 @@ try {
 
 let sequelize = null;
 
-// On Vercel, export a mock Sequelize that doesn't connect
+// On Vercel, export a minimal mock that models can use without connecting
 if (process.env.VERCEL === '1') {
   console.log('⏭️  Skipping database initialization on Vercel (using Supabase REST API)');
   
-  // Create mock Sequelize instance using SQLite in-memory (no network calls)
-  const { Sequelize } = require('sequelize');
-  const mockSequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: ':memory:',
-    logging: false,
-    // This is just for model definitions - no actual DB operations
-  });
+  // Create minimal mock - just enough for model definitions
+  // Models call sequelize.define() but never actually use the result on Vercel
+  const mockSequelize = {
+    define: () => ({ 
+      findOne: async () => null,
+      findAll: async () => [],
+      create: async () => ({}),
+      update: async () => [0],
+      destroy: async () => 0,
+      sync: async () => {},
+      authenticate: async () => {}
+    }),
+    authenticate: async () => {},
+    sync: async () => {},
+    close: async () => {}
+  };
   
   module.exports = mockSequelize;
 } else {
