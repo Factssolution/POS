@@ -60,13 +60,19 @@ try {
 
 let sequelize = null;
 
-// On Vercel, skip database initialization (use Supabase REST API instead)
+// On Vercel, export a mock Sequelize that doesn't connect
 if (process.env.VERCEL === '1') {
   console.log('⏭️  Skipping database initialization on Vercel (using Supabase REST API)');
-  module.exports = {
-    getSequelize: () => { throw new Error('Sequelize not available on Vercel - use Supabase client') },
-    authenticate: async () => { /* No-op on Vercel */ }
-  };
+  
+  // Create mock Sequelize instance that models can use
+  const { Sequelize } = require('sequelize');
+  const mockSequelize = new Sequelize('postgres://mock:mock@mock:5432/mock', {
+    dialect: 'postgres',
+    logging: false,
+    // Don't actually connect - this is just for model definitions
+  });
+  
+  module.exports = mockSequelize;
 } else {
 
 // Function to initialize database connection (lazy loading)
