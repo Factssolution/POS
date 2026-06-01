@@ -114,45 +114,60 @@ exports.createCategory = async (req, res) => {
       });
     }
 
+    // Use Supabase for Vercel deployment
     // Check if category already exists
-    const existingCategory = await Category.findOne({
-      where: { name: name.trim() }
-    });
-
-    if (existingCategory) {
-      return res.status(409).json({
+    const { data: existingCategories, error: checkError } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('name', name.trim())
+      .limit(1);
+    
+    if (checkError) {
+      console.error('Supabase check error:', checkError);
+      return res.status(500).json({
         success: false,
-        message: 'Category already exists'
+        message: 'Failed to check existing category',
+        error: checkError.message
       });
     }
 
-    const category = await Category.create({
-      name: name.trim(),
-      description: description || null,
-      color: color || '#3b82f6',
-      icon: icon || 'Package',
-      status: status || 'active',
-      sort_order: sort_order || 0
-    });
+    if (existingCategories && existingCategories.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Category with this name already exists'
+      });
+    }
+
+    // Create category
+    const { data: newCategory, error: createError } = await supabase
+      .from('categories')
+      .insert({
+        name: name.trim(),
+        description: description || null,
+        color: color || '#000000',
+        icon: icon || null,
+        status: status || 'active',
+        sort_order: sort_order || 0
+      })
+      .select()
+      .single();
+    
+    if (createError) {
+      console.error('Supabase create error:', createError);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create category',
+        error: createError.message
+      });
+    }
 
     res.status(201).json({
       success: true,
       message: 'Category created successfully',
-      data: {
-        ...category.toJSON(),
-        product_count: 0
-      }
+      data: newCategory
     });
   } catch (error) {
     console.error('Create category error:', error);
-    
-    if (error.name === 'SequelizeUniqueConstraintError') {
-      return res.status(409).json({
-        success: false,
-        message: 'Category name already exists'
-      });
-    }
-
     res.status(500).json({
       success: false,
       message: 'Failed to create category',
@@ -167,9 +182,14 @@ exports.updateCategory = async (req, res) => {
     const { id } = req.params;
     const { name, description, color, icon, status, sort_order } = req.body;
 
-    const category = await Category.findByPk(id);
+    // Use Supabase for Vercel deployment
+    const { data: category, error: findError } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (!category) {
+    if (findError || !category) {
       return res.status(404).json({
         success: false,
         message: 'Category not found'
@@ -178,14 +198,14 @@ exports.updateCategory = async (req, res) => {
 
     // If name is being changed, check for duplicates
     if (name && name.trim() !== category.name) {
-      const existingCategory = await Category.findOne({
-        where: { 
-          name: name.trim(),
-          id: { [Op.ne]: id }
-        }
-      });
+      const { data: existingCategories } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('name', name.trim())
+        .neq('id', id)
+        .limit(1);
 
-      if (existingCategory) {
+      if (existingCategories && existingCategories.length > 0) {
         return res.status(409).json({
           success: false,
           message: 'Another category with this name already exists'
@@ -193,44 +213,53 @@ exports.updateCategory = async (req, res) => {
       }
 
       // Update product category references if name changes
-      await Product.update(
-        { category: name.trim() },
-        { where: { category: category.name } }
-      );
+      await supabase
+        .from('products')
+        .update({ category: name.trim() })
+        .eq('category', category.name);
     }
 
-    await category.update({
-      name: name ? name.trim() : category.name,
-      description: description !== undefined ? description : category.description,
-      color: color || category.color,
-      icon: icon || category.icon,
-      status: status || category.status,
-      sort_order: sort_order !== undefined ? sort_order : category.sort_order
-    });
+    // Update the category
+    const { data: updatedCategory, error: updateError } = await supabase
+      .from('categories')
+      .update({
+        name: name ? name.trim() : category.name,
+        description: description !== undefined ? description : category.description,
+        color: color || category.color,
+        icon: icon || category.icon,
+        status: status || category.status,
+        sort_order: sort_order !== undefined ? sort_order : category.sort_order,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (updateError) {
+      console.error('Supabase update error:', updateError);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to update category',
+        error: updateError.message
+      });
+    }
 
     // Get updated product count
-    const productCount = await Product.count({
-      where: { category: category.name }
-    });
+    const { count: productCount } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('category', updatedCategory.name);
 
     res.json({
       success: true,
       message: 'Category updated successfully',
       data: {
-        ...category.toJSON(),
-        product_count: productCount
+        ...updatedCategory,
+        product_count: productCount || 0
       }
     });
   } catch (error) {
     console.error('Update category error:', error);
-    
-    if (error.name === 'SequelizeUniqueConstraintError') {
-      return res.status(409).json({
-        success: false,
-        message: 'Category name already exists'
-      });
-    }
-
     res.status(500).json({
       success: false,
       message: 'Failed to update category',
@@ -244,31 +273,49 @@ exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const category = await Category.findByPk(id);
+    // Use Supabase for Vercel deployment
+    const { data: category, error: findError } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (!category) {
+    if (findError || !category) {
       return res.status(404).json({
         success: false,
-        message: 'Category not found'
+        message: 'Category not found',
+        error: findError?.message
       });
     }
 
     // Check if category has products
-    const productCount = await Product.count({
-      where: { category: category.name }
-    });
+    const { count: productCount } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('category', category.name);
 
-    if (productCount > 0) {
+    if (productCount && productCount > 0) {
       return res.status(400).json({
         success: false,
         message: `Cannot delete category. It has ${productCount} product(s) assigned to it.`,
-        data: {
-          product_count: productCount
-        }
+        data: { category_name: category.name, product_count: productCount }
       });
     }
 
-    await category.destroy();
+    // Delete the category
+    const { error: deleteError } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id);
+    
+    if (deleteError) {
+      console.error('Supabase delete error:', deleteError);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to delete category',
+        error: deleteError.message
+      });
+    }
 
     res.json({
       success: true,

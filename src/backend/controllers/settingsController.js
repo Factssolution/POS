@@ -81,6 +81,7 @@ exports.updateSettings = async (req, res) => {
     const userId = req.user?.id;
     const userEmail = req.user?.email;
 
+    // Use Supabase for Vercel deployment
     // Update each setting and log changes
     for (const [key, value] of Object.entries(settings)) {
       // Validate and sanitize URL fields
@@ -93,16 +94,29 @@ exports.updateSettings = async (req, res) => {
       }
 
       // Get old value before update
-      const existingSetting = await Settings.findOne({
-        where: { setting_key: key }
-      });
-      const oldValue = existingSetting ? existingSetting.setting_value : null;
+      const { data: existingSettings, error: checkError } = await supabase
+        .from('settings')
+        .select('setting_value')
+        .eq('setting_key', key)
+        .limit(1);
+      
+      const oldValue = existingSettings && existingSettings.length > 0 ? existingSettings[0].setting_value : null;
 
-      await Settings.upsert({
-        setting_key: key,
-        setting_value: value,
-        updated_at: new Date()
-      });
+      // Upsert the setting
+      const { error: upsertError } = await supabase
+        .from('settings')
+        .upsert({
+          setting_key: key,
+          setting_value: value,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'setting_key'
+        });
+      
+      if (upsertError) {
+        console.error(`Error updating setting ${key}:`, upsertError);
+        continue;
+      }
 
       // Log the setting change
       if (userId) {
