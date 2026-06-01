@@ -81,7 +81,11 @@ function createModel(tableName) {
       
       const { data, error } = await query;
       if (error) throw new Error(error.message);
-      return data || [];
+      // Add toJSON method to each record
+      return (data || []).map(item => ({
+        ...item,
+        toJSON: () => item
+      }));
     },
 
     // Find one record
@@ -91,14 +95,15 @@ function createModel(tableName) {
       
       const { data, error } = await query;
       if (error) return null;
-      return data && data[0] ? data[0] : null;
+      const item = data && data[0] ? data[0] : null;
+      return item ? { ...item, toJSON: () => item } : null;
     },
 
     // Find by primary key
     findByPk: async (id) => {
       const { data, error } = await getSupabase().from(tableName).select('*').eq('id', id).single();
       if (error) return null;
-      return data;
+      return data ? { ...data, toJSON: () => data } : null;
     },
 
     // Create record
@@ -172,7 +177,13 @@ function createModel(tableName) {
       applyWhere(countQuery, options.where);
       const { count } = await countQuery;
       
-      return { rows: data || [], count: count || 0 };
+      // Add toJSON to each row
+      const rows = (data || []).map(item => ({
+        ...item,
+        toJSON: () => item
+      }));
+      
+      return { rows, count: count || 0 };
     },
 
     // Bulk create
