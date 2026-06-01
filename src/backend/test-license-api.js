@@ -1,65 +1,50 @@
-const http = require('http');
+// Test License API Endpoints
+const axios = require('axios');
 
-console.log('\n🔍 TESTING LICENSE API ENDPOINTS\n');
-console.log('═'.repeat(80));
+const BASE_URL = 'http://localhost:5000/api/v1';
 
-// Test 1: License Status
-console.log('\n📋 TEST 1: GET /api/v1/settings/license/status');
-console.log('─'.repeat(80));
-
-const options1 = {
-  hostname: 'localhost',
-  port: 5000,
-  path: '/api/v1/settings/license/status',
-  method: 'GET',
-  headers: {
-    'Content-Type': 'application/json'
+async function testLicenseAPI() {
+  try {
+    console.log('\n🔐 Step 1: Logging in as Super Admin...\n');
+    
+    // Login
+    const loginResponse = await axios.post(`${BASE_URL}/auth/login`, {
+      email: 'factssolution@gmail.com',
+      password: 'Black@786##'
+    });
+    
+    console.log('Login Response:', JSON.stringify(loginResponse.data, null, 2));
+    const token = loginResponse.data.token || loginResponse.data.data?.token;
+    
+    if (!token) {
+      throw new Error('No token found in login response');
+    }
+    
+    console.log('✅ Login successful!');
+    console.log('   Token:', token.substring(0, 50) + '...');
+    
+    // Test getLicenseStatus
+    console.log('\n📊 Step 2: Testing GET /settings/license/status...\n');
+    const statusResponse = await axios.get(`${BASE_URL}/settings/license/status`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    console.log('✅ License Status:', JSON.stringify(statusResponse.data, null, 2));
+    
+    // Test getAllLicenses
+    console.log('\n📋 Step 3: Testing GET /settings/license/all...\n');
+    const allLicensesResponse = await axios.get(`${BASE_URL}/settings/license/all?page=1&limit=20`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    console.log('✅ All Licenses:', JSON.stringify(allLicensesResponse.data, null, 2));
+    
+    console.log('\n✅ ALL LICENSE APIs WORKING PERFECTLY!\n');
+    
+  } catch (error) {
+    console.error('\n❌ ERROR:', error.response?.data || error.message);
+    if (error.response?.data?.error) {
+      console.error('   Stack:', error.response.data.error);
+    }
   }
-};
+}
 
-const req1 = http.request(options1, (res) => {
-  let data = '';
-  res.on('data', (chunk) => data += chunk);
-  res.on('end', () => {
-    console.log('Status Code:', res.statusCode);
-    console.log('Response:', data.substring(0, 200));
-    
-    // Test 2: Get All Licenses
-    console.log('\n\n📋 TEST 2: GET /api/v1/settings/license/all');
-    console.log('─'.repeat(80));
-    
-    const options2 = {
-      hostname: 'localhost',
-      port: 5000,
-      path: '/api/v1/settings/license/all?page=1&limit=20',
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    };
-    
-    const req2 = http.request(options2, (res2) => {
-      let data2 = '';
-      res2.on('data', (chunk) => data2 += chunk);
-      res2.on('end', () => {
-        console.log('Status Code:', res2.statusCode);
-        console.log('Response:', data2.substring(0, 300));
-        console.log('\n' + '═'.repeat(80));
-        console.log('✅ API TESTS COMPLETE');
-        console.log('═'.repeat(80) + '\n');
-      });
-    });
-    
-    req2.on('error', (e) => {
-      console.error('❌ Request 2 Error:', e.message);
-    });
-    
-    req2.end();
-  });
-});
-
-req1.on('error', (e) => {
-  console.error('❌ Request 1 Error:', e.message);
-});
-
-req1.end();
+testLicenseAPI();

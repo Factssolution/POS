@@ -64,17 +64,18 @@ let sequelize;
 if (process.env.DATABASE_URL) {
   console.log('✅ Using DATABASE_URL connection string');
   console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL.substring(0, 50) + '...');
+  
+  const isPooler = process.env.DATABASE_URL.includes('pooler.supabase.com');
+  console.log(isPooler ? '🔗 Using Connection Pooler' : '🔗 Using Direct Connection');
+  
   sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
     logging: console.log, // Enable logging to see errors
     dialectOptions: {
-      ssl: supabaseCA ? {
+      ssl: {
         require: true,
-        ca: supabaseCA,
-        rejectUnauthorized: true
-      } : {
-        require: true,
-        rejectUnauthorized: false
+        rejectUnauthorized: false, // Accept self-signed certs from pooler
+        ca: supabaseCA || undefined
       }
     },
     pool: {

@@ -387,7 +387,7 @@ export default function CreditDebit() {
                     <TableCell className="font-medium">
                       {transaction.supplier?.name || transaction.supplier_name || 'N/A'}
                     </TableCell>
-                    <TableCell>{transaction.supplier?.phone || 'N/A'}</TableCell>
+                    <TableCell>{transaction.supplier?.contact || transaction.supplier?.phone || 'N/A'}</TableCell>
                     <TableCell>
                       <Badge 
                         variant={transaction.type === 'credit' ? 'default' : 'destructive'}
