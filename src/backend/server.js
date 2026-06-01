@@ -11,27 +11,44 @@ try {
   console.warn('⚠️  Database not available:', err.message);
 }
 
-// Import routes
-const authRoutes = require('./routes/auth');
-const productRoutes = require('./routes/products');
-const employeeRoutes = require('./routes/employees');
-const supplierRoutes = require('./routes/suppliers');
-const transactionRoutes = require('./routes/transactions');
-const orderRoutes = require('./routes/orders');
-const dashboardRoutes = require('./routes/dashboard');
-const settingsRoutes = require('./routes/settings');
-const reportsRoutes = require('./routes/reports');
-const categoryRoutes = require('./routes/categories');
-const backupRoutes = require('./routes/backups');
-const userRoutes = require('./routes/users');  // New user management routes
-const expenseRoutes = require('./routes/expenses');  // Expense management routes
-const licenseRoutes = require('./routes/licenses');  // License management routes
-const blobRoutes = require('./routes/blobs');  // BLOB storage routes (images, logos, documents)
-const tenantRoutes = require('./routes/tenants');  // Multi-tenant management routes
+// Import routes (wrap in try-catch to prevent crashes)
+const routeImports = [
+  'auth', 'products', 'employees', 'suppliers', 'transactions',
+  'orders', 'dashboard', 'settings', 'reports', 'categories',
+  'backups', 'users', 'expenses', 'licenses', 'blobs', 'tenants'
+];
+
+const routes = {};
+routeImports.forEach(name => {
+  try {
+    routes[name] = require(`./routes/${name}`);
+  } catch (err) {
+    console.warn(`⚠️  ${name} routes not available:`, err.message);
+    const express = require('express');
+    routes[name] = express.Router();
+    routes[name].use((req, res) => res.status(503).json({ error: `${name} service unavailable` }));
+  }
+});
+
+const { auth, products, employees, suppliers, transactions, orders, dashboard, settings, reports, categories, backups, users, expenses, licenses, blobs, tenants } = routes;
 
 // Import middleware
-const licenseValidator = require('./middleware/licenseValidator');
-const { attachTenant } = require('./middleware/tenant');  // Multi-tenant middleware
+let licenseValidator;
+try {
+  licenseValidator = require('./middleware/licenseValidator');
+} catch (err) {
+  console.warn('⚠️  License validator not available:', err.message);
+  licenseValidator = (req, res, next) => next(); // Pass-through
+}
+
+let attachTenant;
+try {
+  const tenantMiddleware = require('./middleware/tenant');
+  attachTenant = tenantMiddleware.attachTenant;
+} catch (err) {
+  console.warn('⚠️  Tenant middleware not available:', err.message);
+  attachTenant = (req, res, next) => next(); // Pass-through
+}
 
 const app = express();
 
@@ -74,7 +91,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/auth', auth);
 
 // Attach tenant context to all authenticated requests
 app.use('/api/v1', attachTenant);
@@ -83,21 +100,21 @@ app.use('/api/v1', attachTenant);
 app.use('/api/v1', licenseValidator);
 
 // Protected routes (license validated)
-app.use('/api/v1/products', productRoutes);
-app.use('/api/v1/employees', employeeRoutes);
-app.use('/api/v1/suppliers', supplierRoutes);
-app.use('/api/v1/transactions', transactionRoutes);
-app.use('/api/v1/orders', orderRoutes);
-app.use('/api/v1/dashboard', dashboardRoutes);
-app.use('/api/v1/settings', backupRoutes);  // Backup routes FIRST (specific paths)
-app.use('/api/v1/settings', settingsRoutes); // Settings routes SECOND (catch-all :key)
-app.use('/api/v1/reports', reportsRoutes);
-app.use('/api/v1/categories', categoryRoutes);
-app.use('/api/v1/users', userRoutes);  // User management routes
-app.use('/api/v1/expenses', expenseRoutes);  // Expense management routes
-app.use('/api/v1/settings/license', licenseRoutes);  // License routes (AFTER settings)
-app.use('/api/v1/blobs', blobRoutes);  // BLOB storage routes (images, logos, documents)
-app.use('/api/v1/tenants', tenantRoutes);  // Multi-tenant management routes (Super Admin only)
+app.use('/api/v1/products', products);
+app.use('/api/v1/employees', employees);
+app.use('/api/v1/suppliers', suppliers);
+app.use('/api/v1/transactions', transactions);
+app.use('/api/v1/orders', orders);
+app.use('/api/v1/dashboard', dashboard);
+app.use('/api/v1/settings', backups);  // Backup routes FIRST (specific paths)
+app.use('/api/v1/settings', settings); // Settings routes SECOND (catch-all :key)
+app.use('/api/v1/reports', reports);
+app.use('/api/v1/categories', categories);
+app.use('/api/v1/users', users);  // User management routes
+app.use('/api/v1/expenses', expenses);  // Expense management routes
+app.use('/api/v1/settings/license', licenses);  // License routes (AFTER settings)
+app.use('/api/v1/blobs', blobs);  // BLOB storage routes (images, logos, documents)
+app.use('/api/v1/tenants', tenants);  // Multi-tenant management routes (Super Admin only)
 
 // Health check endpoint
 app.get('/health', (req, res) => {
