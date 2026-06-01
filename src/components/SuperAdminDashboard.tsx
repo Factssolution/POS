@@ -406,7 +406,7 @@ export default function SuperAdminDashboard() {
                               {license.plan_type}
                             </Badge>
                           </TableCell>
-                          <TableCell>Rs {parseFloat(String(license.price)).toLocaleString()}</TableCell>
+                          <TableCell>Rs {(parseFloat(String(license.price)) || 0).toLocaleString()}</TableCell>
                           <TableCell>{formatDate(license.issued_date)}</TableCell>
                           <TableCell>{formatDate(license.expiry_date)}</TableCell>
                           <TableCell>{getStatusBadge(license.status)}</TableCell>
