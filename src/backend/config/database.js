@@ -58,10 +58,23 @@ try {
   console.warn('⚠️  Could not load Supabase CA certificate:', err.message);
 }
 
-let sequelize;
+let sequelize = null;
 
-// Priority 1: Use DATABASE_URL if available (complete connection string)
-if (process.env.DATABASE_URL) {
+// On Vercel, skip database initialization (use Supabase REST API instead)
+if (process.env.VERCEL === '1') {
+  console.log('⏭️  Skipping database initialization on Vercel (using Supabase REST API)');
+  module.exports = {
+    getSequelize: () => { throw new Error('Sequelize not available on Vercel - use Supabase client') },
+    authenticate: async () => { /* No-op on Vercel */ }
+  };
+} else {
+
+// Function to initialize database connection (lazy loading)
+const initializeDatabase = () => {
+  if (sequelize) return sequelize; // Already initialized
+
+  // Priority 1: Use DATABASE_URL if available (complete connection string)
+  if (process.env.DATABASE_URL) {
   console.log('✅ Using DATABASE_URL connection string');
   console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL.substring(0, 50) + '...');
   
@@ -146,10 +159,23 @@ else if (process.env.DB_HOST && process.env.DB_USER) {
     dialect: 'postgres',
     logging: false
   });
-}
+  }
 
-if (!sequelize) {
-  throw new Error('Failed to initialize Sequelize');
-}
+  if (!sequelize) {
+    throw new Error('Failed to initialize Sequelize');
+  }
 
-module.exports = sequelize;
+  return sequelize;
+};
+
+// Export getter function instead of direct instance
+module.exports = {
+  getSequelize: initializeDatabase,
+  // For backward compatibility - will trigger lazy init
+  authenticate: async () => {
+    const sequelize = initializeDatabase();
+    return sequelize.authenticate();
+  }
+};
+
+} // End else block for non-Vercel
