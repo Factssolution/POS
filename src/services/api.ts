@@ -292,18 +292,68 @@ class APIService {
 
   // Products
   async getProducts(params?: { status?: string; category?: string; search?: string; page?: number; limit?: number }): Promise<ProductResponse> {
-    const queryString = new URLSearchParams(params as any).toString();
-    const response = await apiCall(`/products${queryString ? '?' + queryString : ''}`);
-    // API returns { success: true, products: [...], count: X }
-    return {
-      products: response.products || [],
-      pagination: {
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: response.count || 0,
-        itemsPerPage: response.count || 0
+    try {
+      // Try backend API first
+      const queryString = new URLSearchParams(params as any).toString();
+      const response = await apiCall(`/products${queryString ? '?' + queryString : ''}`);
+      // API returns { success: true, products: [...], count: X }
+      return {
+        products: response.products || [],
+        pagination: {
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: response.count || 0,
+          itemsPerPage: response.count || 0
+        }
+      };
+    } catch (error) {
+      // Fallback to Supabase
+      console.log(' Backend API unavailable, using Supabase fallback for products');
+      
+      try {
+        const { supabase } = await import('./supabase');
+        
+        let query = supabase
+          .from('products')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false });
+        
+        if (params?.status) {
+          query = query.eq('status', params.status);
+        }
+        
+        if (params?.category) {
+          query = query.eq('category', params.category);
+        }
+        
+        if (params?.search) {
+          query = query.or(`name.ilike.%${params.search}%,barcode.ilike.%${params.search}%`);
+        }
+        
+        const { data, error: queryError, count } = await query;
+        
+        if (queryError) {
+          console.error('Supabase products query error:', queryError);
+          if (queryError.code === '42501' || queryError.message?.includes('permission denied')) {
+            console.warn('⚠️  Supabase products table permission denied. Run GRANT SELECT ON public.products TO anon;');
+          }
+          return { products: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 0 } };
+        }
+        
+        return {
+          products: data || [],
+          pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: count || 0,
+            itemsPerPage: count || 0
+          }
+        };
+      } catch (supabaseError) {
+        console.error('Supabase fallback failed for products:', supabaseError);
+        return { products: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 0 } };
       }
-    };
+    }
   }
 
   async getCategories(): Promise<{ categories: Array<{id: number; name: string; description: string | null; color: string; icon: string}>; count: number }> {
@@ -313,13 +363,55 @@ class APIService {
 
   // Category Management APIs
   async getCategoryList(params?: { status?: string; search?: string }): Promise<{ categories: Category[]; count: number }> {
-    const queryString = new URLSearchParams(params as any).toString();
-    const response = await apiCall(`/categories${queryString ? '?' + queryString : ''}`);
-    // API returns { success: true, categories: [...], count: X }
-    return {
-      categories: response.categories || [],
-      count: response.count || 0
-    };
+    try {
+      // Try backend API first
+      const queryString = new URLSearchParams(params as any).toString();
+      const response = await apiCall(`/categories${queryString ? '?' + queryString : ''}`);
+      // API returns { success: true, categories: [...], count: X }
+      return {
+        categories: response.categories || [],
+        count: response.count || 0
+      };
+    } catch (error) {
+      // Fallback to Supabase
+      console.log(' Backend API unavailable, using Supabase fallback for categories');
+      
+      try {
+        const { supabase } = await import('./supabase');
+        
+        let query = supabase
+          .from('categories')
+          .select('*', { count: 'exact' })
+          .order('sort_order', { ascending: true })
+          .order('name', { ascending: true });
+        
+        if (params?.status) {
+          query = query.eq('status', params.status);
+        }
+        
+        if (params?.search) {
+          query = query.ilike('name', `%${params.search}%`);
+        }
+        
+        const { data, error: queryError, count } = await query;
+        
+        if (queryError) {
+          console.error('Supabase categories query error:', queryError);
+          if (queryError.code === '42501' || queryError.message?.includes('permission denied')) {
+            console.warn('⚠️  Supabase categories table permission denied. Run GRANT SELECT ON public.categories TO anon;');
+          }
+          return { categories: [], count: 0 };
+        }
+        
+        return {
+          categories: data || [],
+          count: count || 0
+        };
+      } catch (supabaseError) {
+        console.error('Supabase fallback failed for categories:', supabaseError);
+        return { categories: [], count: 0 };
+      }
+    }
   }
 
   async getCategoryById(id: number): Promise<Category> {
@@ -448,9 +540,37 @@ class APIService {
 
   // Suppliers
   async getSuppliers(): Promise<Supplier[]> {
-    const response = await apiCall('/suppliers');
-    // API returns { success: true, data: [...] } for suppliers
-    return response.data || response.suppliers || [];
+    try {
+      // Try backend API first
+      const response = await apiCall('/suppliers');
+      // API returns { success: true, data: [...] } for suppliers
+      return response.data || response.suppliers || [];
+    } catch (error) {
+      // Fallback to Supabase
+      console.log(' Backend API unavailable, using Supabase fallback for suppliers');
+      
+      try {
+        const { supabase } = await import('./supabase');
+        
+        const { data, error: queryError } = await supabase
+          .from('suppliers')
+          .select('*')
+          .order('name', { ascending: true });
+        
+        if (queryError) {
+          console.error('Supabase suppliers query error:', queryError);
+          if (queryError.code === '42501' || queryError.message?.includes('permission denied')) {
+            console.warn('⚠️  Supabase suppliers table permission denied. Run GRANT SELECT ON public.suppliers TO anon;');
+          }
+          return [];
+        }
+        
+        return data || [];
+      } catch (supabaseError) {
+        console.error('Supabase fallback failed for suppliers:', supabaseError);
+        return [];
+      }
+    }
   }
 
   async getSupplierById(id: number): Promise<Supplier> {
