@@ -897,25 +897,71 @@ class APIService {
       console.log(' Backend API unavailable, using Supabase fallback');
       const { supabase } = await import('./supabase');
       
-      // Get license settings
-      const { data: settings } = await supabase
-        .from('settings')
-        .select('key, value')
-        .in('key', ['license_key', 'license_status', 'trial_end_date', 'is_trial'])
-      
-      const statusMap: any = {};
-      settings?.forEach((s: any) => {
-        statusMap[s.key] = s.value;
-      });
-      
-      return {
-        is_trial: statusMap.is_trial === 'true' || false,
-        license_status: statusMap.license_status || 'trial',
-        license_key: statusMap.license_key || null,
-        trial_end_date: statusMap.trial_end_date || null,
-        days_remaining: statusMap.trial_end_date ? Math.ceil((new Date(statusMap.trial_end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 30,
-        is_expired: statusMap.license_status === 'expired'
-      };
+      try {
+        // Get license settings - FIXED: Use correct column names (setting_key, setting_value)
+        const { data: settings, error: settingsError } = await supabase
+          .from('settings')
+          .select('setting_key, setting_value')
+          .in('setting_key', ['license_key', 'license_status', 'trial_end_date', 'is_trial', 'trial_start_date', 'trial_period_days', 'license_expiry'])
+        
+        if (settingsError) {
+          console.error('Supabase settings query error:', settingsError);
+          // Return default trial status if settings table unavailable
+          return {
+            is_trial: true,
+            license_status: 'trial',
+            license_key: null,
+            trial_start_date: null,
+            trial_end_date: null,
+            trial_days: 45,
+            days_remaining: 45,
+            expiry_date: null,
+            is_expired: false
+          };
+        }
+        
+        const statusMap: any = {};
+        settings?.forEach((s: any) => {
+          statusMap[s.setting_key] = s.setting_value;
+        });
+        
+        const isTrial = statusMap.is_trial === 'true';
+        const trialDays = parseInt(statusMap.trial_period_days || '45');
+        
+        // Calculate days remaining
+        let daysRemaining = 45;
+        if (isTrial && statusMap.trial_end_date) {
+          daysRemaining = Math.ceil((new Date(statusMap.trial_end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        } else if (!isTrial && statusMap.license_expiry) {
+          daysRemaining = Math.ceil((new Date(statusMap.license_expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        }
+        
+        return {
+          is_trial: isTrial,
+          license_status: statusMap.license_status || 'trial',
+          license_key: statusMap.license_key || null,
+          trial_start_date: statusMap.trial_start_date || null,
+          trial_end_date: statusMap.trial_end_date || null,
+          trial_days: trialDays,
+          days_remaining: daysRemaining,
+          expiry_date: isTrial ? statusMap.trial_end_date : statusMap.license_expiry,
+          is_expired: daysRemaining <= 0
+        };
+      } catch (supabaseError) {
+        console.error('Supabase fallback failed:', supabaseError);
+        // Return safe defaults
+        return {
+          is_trial: true,
+          license_status: 'trial',
+          license_key: null,
+          trial_start_date: null,
+          trial_end_date: null,
+          trial_days: 45,
+          days_remaining: 45,
+          expiry_date: null,
+          is_expired: false
+        };
+      }
     }
   }
 
@@ -929,42 +975,74 @@ class APIService {
     } catch (error) {
       // Fallback to Supabase
       console.log(' Backend API unavailable, using Supabase fallback for licenses');
-      const { supabase } = await import('./supabase');
       
-      const page = params?.page || 1;
-      const limit = params?.limit || 20;
-      const offset = (page - 1) * limit;
-      
-      let query = supabase
-        .from('licenses')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
-      
-      if (params?.status) {
-        query = query.eq('status', params.status);
-      }
-      
-      if (params?.search) {
-        query = query.or(`client_email.ilike.%${params.search}%,client_name.ilike.%${params.search}%`);
-      }
-      
-      const { data, error: queryError, count } = await query;
-      
-      if (queryError) {
-        console.error('Supabase licenses query error:', queryError);
-        return { data: [], pagination: { currentPage: page, totalPages: 1, totalItems: 0 } };
-      }
-      
-      return {
-        success: true,
-        data: data || [],
-        pagination: {
-          currentPage: page,
-          totalPages: Math.ceil((count || 0) / limit),
-          totalItems: count || 0
+      try {
+        const { supabase } = await import('./supabase');
+        
+        const page = params?.page || 1;
+        const limit = params?.limit || 20;
+        const offset = (page - 1) * limit;
+        
+        let query = supabase
+          .from('licenses')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
+        
+        if (params?.status) {
+          query = query.eq('status', params.status);
         }
-      };
+        
+        if (params?.search) {
+          query = query.or(`client_email.ilike.%${params.search}%,client_name.ilike.%${params.search}%`);
+        }
+        
+        const { data, error: queryError, count } = await query;
+        
+        if (queryError) {
+          console.error('Supabase licenses query error:', queryError);
+          // If permission denied, return empty result instead of crashing
+          if (queryError.code === '42501' || queryError.message?.includes('permission denied')) {
+            console.warn('⚠️  Supabase licenses table permission denied. Run this SQL in Supabase SQL Editor:');
+            console.warn('GRANT SELECT ON public.licenses TO anon, authenticated;');
+          }
+          return { 
+            success: true,
+            data: [], 
+            pagination: { 
+              currentPage: page, 
+              totalPages: 1, 
+              totalItems: 0,
+              itemsPerPage: limit
+            }
+          };
+        }
+        
+        return {
+          success: true,
+          data: data || [],
+          pagination: {
+            currentPage: page,
+            totalPages: Math.ceil((count || 0) / limit),
+            totalItems: count || 0,
+            itemsPerPage: limit
+          }
+        };
+      } catch (supabaseError) {
+        console.error('Supabase fallback failed:', supabaseError);
+        const page = params?.page || 1;
+        const limit = params?.limit || 20;
+        return {
+          success: true,
+          data: [],
+          pagination: {
+            currentPage: page,
+            totalPages: 1,
+            totalItems: 0,
+            itemsPerPage: limit
+          }
+        };
+      }
     }
   }
 
