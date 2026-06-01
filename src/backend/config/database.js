@@ -66,16 +66,30 @@ if (process.env.VERCEL === '1') {
   
   // Create minimal mock - just enough for model definitions
   // Models call sequelize.define() but never actually use the result on Vercel
-  const mockModel = {
-    findOne: async () => null,
-    findAll: async () => [],
-    create: async () => ({}),
-    update: async () => [0],
-    destroy: async () => 0,
-    count: async () => 0,
-    findByPk: async () => null,
-    sync: async () => {},
-  };
+  const mockModel = function() {};
+  mockModel.findOne = async () => null;
+  mockModel.findAll = async () => [];
+  mockModel.create = async () => ({});
+  mockModel.update = async () => [0];
+  mockModel.destroy = async () => 0;
+  mockModel.count = async () => 0;
+  mockModel.findByPk = async () => null;
+  mockModel.sync = async () => {};
+  mockModel.prototype = {}; // Allow adding prototype methods
+  
+  // Sequelize lifecycle hooks (no-op on Vercel)
+  mockModel.beforeCreate = () => {};
+  mockModel.beforeUpdate = () => {};
+  mockModel.beforeSave = () => {};
+  mockModel.afterCreate = () => {};
+  mockModel.afterUpdate = () => {};
+  mockModel.afterSave = () => {};
+  mockModel.beforeDestroy = () => {};
+  mockModel.afterDestroy = () => {};
+  mockModel.beforeBulkCreate = () => {};
+  mockModel.beforeBulkUpdate = () => {};
+  mockModel.beforeBulkDestroy = () => {};
+  mockModel.addHook = () => {};
   
   const mockSequelize = {
     define: () => mockModel,
