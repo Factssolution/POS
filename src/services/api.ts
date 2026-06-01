@@ -296,14 +296,14 @@ class APIService {
       // Try backend API first
       const queryString = new URLSearchParams(params as any).toString();
       const response = await apiCall(`/products${queryString ? '?' + queryString : ''}`);
-      // API returns { success: true, products: [...], count: X }
+      // API returns { success: true, data: { products: [...], count: X } }
       return {
-        products: response.products || [],
+        products: response.data?.products || response.products || [],
         pagination: {
           currentPage: 1,
           totalPages: 1,
-          totalItems: response.count || 0,
-          itemsPerPage: response.count || 0
+          totalItems: response.data?.count || response.count || 0,
+          itemsPerPage: response.data?.count || response.count || 0
         }
       };
     } catch (error) {
@@ -367,10 +367,10 @@ class APIService {
       // Try backend API first
       const queryString = new URLSearchParams(params as any).toString();
       const response = await apiCall(`/categories${queryString ? '?' + queryString : ''}`);
-      // API returns { success: true, categories: [...], count: X }
+      // API returns { success: true, data: { categories: [...], count: X } }
       return {
-        categories: response.categories || [],
-        count: response.count || 0
+        categories: response.data?.categories || response.categories || [],
+        count: response.data?.count || response.count || 0
       };
     } catch (error) {
       // Fallback to Supabase
