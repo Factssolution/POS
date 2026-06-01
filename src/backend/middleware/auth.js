@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const jwtConfig = require('../config/jwt');
-const { User } = require('../models');
+const supabase = require('../config/supabase');
 
 // Middleware to verify JWT token
 const authenticate = async (req, res, next) => {
@@ -20,10 +20,14 @@ const authenticate = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, jwtConfig.secret);
     
-    // Find user
-    const user = await User.findByPk(decoded.id);
+    // Find user via Supabase REST API
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', decoded.id)
+      .single();
     
-    if (!user) {
+    if (error || !user) {
       return res.status(401).json({
         success: false,
         message: 'User not found. Token is invalid.'
