@@ -33,9 +33,10 @@ let sequelize;
 // Priority 1: Use DATABASE_URL if available (complete connection string)
 if (process.env.DATABASE_URL) {
   console.log('✅ Using DATABASE_URL connection string');
+  console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL.substring(0, 50) + '...');
   sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
-    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    logging: console.log, // Enable logging to see errors
     dialectOptions: {
       ssl: {
         require: true,
@@ -47,8 +48,17 @@ if (process.env.DATABASE_URL) {
       min: 0,
       acquire: 30000,
       idle: 10000
+    },
+    retry: {
+      max: 3,
+      timeout: 10000
     }
   });
+  
+  // Test connection on startup
+  sequelize.authenticate()
+    .then(() => console.log('✅ Database connected successfully via DATABASE_URL'))
+    .catch(err => console.error('❌ Database connection failed:', err.message));
 }
 // Priority 2: Use individual DB_* variables
 else if (process.env.DB_HOST && process.env.DB_USER) {
