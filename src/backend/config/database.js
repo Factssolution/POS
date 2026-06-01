@@ -60,52 +60,10 @@ try {
 
 let sequelize = null;
 
-// On Vercel, export a minimal mock that models can use without connecting
+// On Vercel, export Supabase REST API models
 if (process.env.VERCEL === '1') {
-  console.log('⏭️  Skipping database initialization on Vercel (using Supabase REST API)');
-  
-  // Create minimal mock - just enough for model definitions
-  // Models call sequelize.define() but never actually use the result on Vercel
-  const mockModel = function() {};
-  mockModel.findOne = async () => null;
-  mockModel.findAll = async () => [];
-  mockModel.create = async () => ({});
-  mockModel.update = async () => [0];
-  mockModel.destroy = async () => 0;
-  mockModel.count = async () => 0;
-  mockModel.findByPk = async () => null;
-  mockModel.sync = async () => {};
-  mockModel.prototype = {}; // Allow adding prototype methods
-  
-  // Sequelize lifecycle hooks (no-op on Vercel)
-  mockModel.beforeCreate = () => {};
-  mockModel.beforeUpdate = () => {};
-  mockModel.beforeSave = () => {};
-  mockModel.afterCreate = () => {};
-  mockModel.afterUpdate = () => {};
-  mockModel.afterSave = () => {};
-  mockModel.beforeDestroy = () => {};
-  mockModel.afterDestroy = () => {};
-  mockModel.beforeBulkCreate = () => {};
-  mockModel.beforeBulkUpdate = () => {};
-  mockModel.beforeBulkDestroy = () => {};
-  mockModel.addHook = () => {};
-  
-  // Sequelize associations (no-op on Vercel)
-  mockModel.belongsTo = () => mockModel;
-  mockModel.hasMany = () => mockModel;
-  mockModel.hasOne = () => mockModel;
-  mockModel.belongsToMany = () => mockModel;
-  
-  const mockSequelize = {
-    define: () => mockModel,
-    model: () => mockModel,
-    authenticate: async () => {},
-    sync: async () => {},
-    close: async () => {}
-  };
-  
-  module.exports = mockSequelize;
+  console.log('⏭️  Using Supabase REST API models on Vercel');
+  module.exports = require('./supabaseModels');
 } else {
 
 // Function to initialize database connection (lazy loading)

@@ -1,24 +1,28 @@
-const User = require('./User');
-const Product = require('./Product');
-const Employee = require('./Employee');
-const Supplier = require('./Supplier');
-const Transaction = require('./Transaction');
-const Order = require('./Order');
-const OrderItem = require('./OrderItem');
-const Settings = require('./Settings');
-const Category = require('./Category');
-const AuditLog = require('./AuditLog');
-const Expense = require('./Expense');
-const License = require('./License');
-const Tenant = require('./Tenant');
+// On Vercel, use Supabase REST API models directly
+if (process.env.VERCEL === '1') {
+  module.exports = require('../config/supabaseModels');
+} else {
+  const User = require('./User');
+  const Product = require('./Product');
+  const Employee = require('./Employee');
+  const Supplier = require('./Supplier');
+  const Transaction = require('./Transaction');
+  const Order = require('./Order');
+  const OrderItem = require('./OrderItem');
+  const Settings = require('./Settings');
+  const Category = require('./Category');
+  const AuditLog = require('./AuditLog');
+  const Expense = require('./Expense');
+  const License = require('./License');
+  const Tenant = require('./Tenant');
 
-// Blob model is a factory function, need to initialize it
-const sequelize = require('../config/database');
-const BlobFactory = require('./Blob');
-const Blob = BlobFactory(sequelize);
+  // Blob model is a factory function, need to initialize it
+  const sequelize = require('../config/database');
+  const BlobFactory = require('./Blob');
+  const Blob = BlobFactory(sequelize);
 
-// Define associations AFTER all models are loaded
-function setupAssociations() {
+  // Define associations AFTER all models are loaded
+  function setupAssociations() {
   // Tenant associations
   Tenant.hasMany(User, { foreignKey: 'tenant_id', as: 'users' });
   Tenant.hasMany(Product, { foreignKey: 'tenant_id', as: 'products' });
@@ -45,19 +49,20 @@ function setupAssociations() {
 setupAssociations();
 
 // Export all models
-module.exports = {
-  User,
-  Product,
-  Employee,
-  Supplier,
-  Transaction,
-  Order,
-  OrderItem,
-  Settings,
-  Category,
-  AuditLog,
-  Expense,
-  License,
-  Tenant,
-  Blob
-};
+  module.exports = {
+    User,
+    Product,
+    Employee,
+    Supplier,
+    Transaction,
+    Order,
+    OrderItem,
+    Settings,
+    Category,
+    AuditLog,
+    Expense,
+    License,
+    Tenant,
+    Blob
+  };
+}
