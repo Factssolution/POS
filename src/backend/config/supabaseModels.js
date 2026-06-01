@@ -225,11 +225,6 @@ function createModel(tableName) {
   };
 }
 
-// Sequelize Op symbol
-const Op = {
-  in: Symbol.for('op'),
-};
-
 // Export models
 module.exports = {
   User: createModel('users'),
