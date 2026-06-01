@@ -52,62 +52,67 @@ exports.login = async (req, res) => {
 
     // CRITICAL: Check license status (except for Super Admin)
     if (user.role !== 'Super Admin') {
-      const { Settings } = require('../models');
-      const { Op } = require('sequelize');
-      
-      const settings = await Settings.findAll({
-        where: {
-          setting_key: {
-            [Op.in]: ['license_status', 'license_expiry', 'is_trial', 'trial_end_date']
+      // Skip license check on Vercel (no Settings table)
+      if (process.env.VERCEL === '1') {
+        console.log('⏭️  Skipping license check on Vercel');
+      } else {
+        const { Settings } = require('../models');
+        const { Op } = require('sequelize');
+        
+        const settings = await Settings.findAll({
+          where: {
+            setting_key: {
+              [Op.in]: ['license_status', 'license_expiry', 'is_trial', 'trial_end_date']
+            }
           }
-        }
-      });
-
-      const settingsMap = {};
-      settings.forEach(s => {
-        settingsMap[s.setting_key] = s.setting_value;
-      });
-
-      const isTrial = settingsMap.is_trial === 'true';
-      const licenseStatus = settingsMap.license_status || 'trial';
-
-      // Check trial period
-      if (isTrial) {
-        const trialEndDate = settingsMap.trial_end_date;
-        if (trialEndDate) {
-          const daysRemaining = Math.ceil((new Date(trialEndDate) - new Date()) / (1000 * 60 * 60 * 24));
-          if (daysRemaining <= 0) {
-            return res.status(403).json({
-              success: false,
-              message: 'Trial period has expired. Please activate your license to continue.',
-              license_error: true
-            });
-          }
-        }
-      } 
-      // Check license status
-      else if (licenseStatus !== 'active') {
-        return res.status(403).json({
-          success: false,
-          message: 'System license is not active. Please contact administrator.',
-          license_error: true
         });
-      }
-      // Check license expiry
-      else if (licenseStatus === 'active') {
-        const licenseExpiry = settingsMap.license_expiry;
-        if (licenseExpiry) {
-          const daysRemaining = Math.ceil((new Date(licenseExpiry) - new Date()) / (1000 * 60 * 60 * 24));
-          if (daysRemaining <= 0) {
-            return res.status(403).json({
-              success: false,
-              message: 'License has expired. Please contact administrator to renew.',
-              license_error: true
-            });
+
+        const settingsMap = {};
+        settings.forEach(s => {
+          settingsMap[s.setting_key] = s.setting_value;
+        });
+
+        const isTrial = settingsMap.is_trial === 'true';
+        const licenseStatus = settingsMap.license_status || 'trial';
+
+        // Check trial period
+        if (isTrial) {
+          const trialEndDate = settingsMap.trial_end_date;
+          if (trialEndDate) {
+            const daysRemaining = Math.ceil((new Date(trialEndDate) - new Date()) / (1000 * 60 * 60 * 24));
+            if (daysRemaining <= 0) {
+              return res.status(403).json({
+                success: false,
+                message: 'Trial period has expired. Please activate your license to continue.',
+                license_error: true
+              });
+            }
+          }
+        } 
+        // Check license status
+        else if (licenseStatus !== 'active') {
+          return res.status(403).json({
+            success: false,
+            message: 'System license is not active. Please contact administrator.',
+            license_error: true
+          });
+        }
+        // Check license expiry
+        else if (licenseStatus === 'active') {
+          const licenseExpiry = settingsMap.license_expiry;
+          if (licenseExpiry) {
+            const daysRemaining = Math.ceil((new Date(licenseExpiry) - new Date()) / (1000 * 60 * 60 * 24));
+            if (daysRemaining <= 0) {
+              return res.status(403).json({
+                success: false,
+                message: 'License has expired. Please contact administrator to renew.',
+                license_error: true
+              });
+            }
           }
         }
-      }
-    }
+      } // End else (non-Vercel license check)
+    } // End if (not Super Admin)
 
     // Generate token
     const token = generateToken({
